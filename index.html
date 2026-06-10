@@ -724,6 +724,10 @@
               <span>宇宙队列</span>
               <strong id="queueCount">0</strong>
             </div>
+            <div class="stat">
+              <span>全网发射</span>
+              <strong id="globalCount">未连接</strong>
+            </div>
           </div>
         </div>
       </section>
@@ -755,6 +759,7 @@
     const localCountEl = document.querySelector("#localCount");
     const sessionCountEl = document.querySelector("#sessionCount");
     const queueCountEl = document.querySelector("#queueCount");
+    const globalCountEl = document.querySelector("#globalCount");
     const logBox = document.querySelector("#logBox");
     const visual = document.querySelector("#visual");
     const progressBar = document.querySelector("#progressBar");
@@ -766,8 +771,10 @@
     const moodButtons = [...document.querySelectorAll(".mood")];
 
     const formatter = new Intl.NumberFormat("zh-CN");
+    const globalCounterEndpoint = "";
     let localCount = Number(localStorage.getItem(storageKey) || 0);
     let sessionCount = 0;
+    let globalCount = null;
     let currentMood = "被工作夺舍";
     let queueCount = 7942331882 + getDaySeed();
     let toastTimer = 0;
@@ -814,6 +821,43 @@
       localCountEl.textContent = formatNumber(localCount);
       sessionCountEl.textContent = formatNumber(sessionCount);
       queueCountEl.textContent = formatNumber(queueCount);
+      globalCountEl.textContent = globalCount === null ? "未连接" : formatNumber(globalCount);
+    }
+
+    async function loadGlobalCount() {
+      if (!globalCounterEndpoint) {
+        return;
+      }
+
+      try {
+        const response = await fetch(globalCounterEndpoint, { method: "GET" });
+        if (!response.ok) {
+          throw new Error("Global counter unavailable");
+        }
+        const data = await response.json();
+        globalCount = Number(data.count || 0);
+      } catch (error) {
+        globalCount = null;
+      }
+      renderCounts();
+    }
+
+    async function incrementGlobalCount() {
+      if (!globalCounterEndpoint) {
+        return;
+      }
+
+      try {
+        const response = await fetch(globalCounterEndpoint, { method: "POST" });
+        if (!response.ok) {
+          throw new Error("Global counter unavailable");
+        }
+        const data = await response.json();
+        globalCount = Number(data.count || 0);
+      } catch (error) {
+        globalCount = null;
+      }
+      renderCounts();
     }
 
     function setProgress(value) {
@@ -875,6 +919,7 @@
       queueCount += 1 + Math.floor(Math.random() * 4);
       localStorage.setItem(storageKey, String(localCount));
       renderCounts();
+      incrementGlobalCount();
 
       const receipt = receipts[Math.floor(Math.random() * receipts.length)];
       receiptText.textContent = `${receipt} 本次状态：${currentMood}。`;
@@ -920,6 +965,7 @@
     }, 1800);
 
     renderCounts();
+    loadGlobalCount();
 
     const canvas = document.querySelector("#space");
     const context = canvas.getContext("2d");
