@@ -1,0 +1,978 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>地球坐标广播控制台</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090a0c;
+      --panel: rgba(18, 22, 24, 0.78);
+      --panel-solid: #121618;
+      --line: rgba(225, 238, 222, 0.16);
+      --text: #edf7ec;
+      --muted: #9dafaa;
+      --red: #ff4d4d;
+      --red-dark: #9e2326;
+      --green: #58f2a1;
+      --amber: #f6c35b;
+      --cyan: #5bd7f6;
+      --ink: #050606;
+      --shadow: 0 22px 70px rgba(0, 0, 0, 0.48);
+      --radius: 8px;
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+      background:
+        radial-gradient(circle at 16% 14%, rgba(255, 77, 77, 0.18), transparent 22rem),
+        radial-gradient(circle at 84% 28%, rgba(91, 215, 246, 0.13), transparent 24rem),
+        linear-gradient(145deg, #08090a 0%, #11130f 42%, #17120d 100%);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    #space {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.85;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      z-index: 1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+      background-size: 64px 64px, 64px 64px;
+      mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.25));
+    }
+
+    .page {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+      padding: clamp(18px, 3vw, 34px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+      gap: clamp(18px, 2.6vw, 30px);
+      align-items: stretch;
+    }
+
+    .main {
+      min-height: calc(100vh - clamp(36px, 6vw, 68px));
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+    }
+
+    .topbar,
+    .panel,
+    .counter-window,
+    .receipt {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .sigil {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(88, 242, 161, 0.48);
+      position: relative;
+      flex: 0 0 auto;
+      background:
+        radial-gradient(circle, rgba(88, 242, 161, 0.22) 0 18%, transparent 19%),
+        conic-gradient(from 90deg, rgba(88, 242, 161, 0.9), rgba(246, 195, 91, 0.72), rgba(255, 77, 77, 0.82), rgba(88, 242, 161, 0.9));
+    }
+
+    .sigil::after {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      background: var(--panel-solid);
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: clamp(19px, 2.2vw, 28px);
+      line-height: 1.1;
+      letter-spacing: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-subtitle,
+    .status-chip,
+    .tiny {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .status-chip {
+      flex: 0 0 auto;
+      border: 1px solid rgba(88, 242, 161, 0.25);
+      color: var(--green);
+      background: rgba(88, 242, 161, 0.08);
+      padding: 8px 10px;
+      border-radius: 999px;
+    }
+
+    .hero {
+      min-height: 520px;
+      display: grid;
+      grid-template-columns: minmax(280px, 0.9fr) minmax(300px, 1fr);
+      gap: clamp(20px, 3vw, 34px);
+      align-items: center;
+      padding: clamp(18px, 3vw, 34px);
+    }
+
+    .headline {
+      margin: 0 0 14px;
+      max-width: 720px;
+      font-size: clamp(42px, 7vw, 90px);
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .headline span {
+      color: var(--red);
+      text-shadow: 0 0 34px rgba(255, 77, 77, 0.32);
+    }
+
+    .copy {
+      max-width: 620px;
+      margin: 0 0 22px;
+      color: #cad8d2;
+      font-size: clamp(16px, 1.8vw, 19px);
+      line-height: 1.75;
+    }
+
+    .mood-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 22px 0 26px;
+    }
+
+    .mood {
+      min-height: 44px;
+      border: 1px solid rgba(237, 247, 236, 0.13);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: #dbe8e0;
+      cursor: pointer;
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .mood:hover,
+    .mood[aria-pressed="true"] {
+      transform: translateY(-1px);
+      border-color: rgba(246, 195, 91, 0.58);
+      background: rgba(246, 195, 91, 0.13);
+      color: #fff6de;
+    }
+
+    .launch-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .launch {
+      width: min(100%, 340px);
+      min-height: 72px;
+      border: 0;
+      border-radius: var(--radius);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 900;
+      font-size: clamp(19px, 2.6vw, 28px);
+      letter-spacing: 0;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 42%),
+        linear-gradient(135deg, var(--red), var(--red-dark));
+      box-shadow:
+        0 16px 40px rgba(255, 77, 77, 0.25),
+        inset 0 -4px 0 rgba(0, 0, 0, 0.22);
+      transition: transform 150ms ease, filter 150ms ease;
+    }
+
+    .launch:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .launch:active {
+      transform: translateY(2px);
+    }
+
+    .launch[disabled] {
+      cursor: wait;
+      filter: saturate(0.75);
+      opacity: 0.82;
+    }
+
+    .abort {
+      min-height: 44px;
+      border: 1px solid rgba(237, 247, 236, 0.15);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.04);
+      color: #dfe9e3;
+      padding: 0 16px;
+      cursor: pointer;
+    }
+
+    .visual {
+      min-height: 410px;
+      position: relative;
+      display: grid;
+      place-items: center;
+    }
+
+    .radar {
+      width: min(88vw, 430px);
+      aspect-ratio: 1;
+      position: relative;
+      border-radius: 50%;
+      border: 1px solid rgba(88, 242, 161, 0.34);
+      background:
+        radial-gradient(circle, rgba(88, 242, 161, 0.18) 0 2px, transparent 3px),
+        repeating-radial-gradient(circle, transparent 0 56px, rgba(88, 242, 161, 0.12) 57px 58px),
+        linear-gradient(90deg, transparent calc(50% - 1px), rgba(88, 242, 161, 0.18) 50%, transparent calc(50% + 1px)),
+        linear-gradient(0deg, transparent calc(50% - 1px), rgba(88, 242, 161, 0.18) 50%, transparent calc(50% + 1px));
+      box-shadow:
+        0 0 80px rgba(88, 242, 161, 0.1),
+        inset 0 0 60px rgba(88, 242, 161, 0.07);
+      overflow: hidden;
+    }
+
+    .radar::before {
+      content: "";
+      position: absolute;
+      inset: 50% 50% 0 0;
+      transform-origin: 100% 0;
+      background: linear-gradient(45deg, rgba(88, 242, 161, 0.58), transparent 58%);
+      animation: sweep 4.2s linear infinite;
+    }
+
+    .radar::after {
+      content: "";
+      position: absolute;
+      inset: 15%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 42% 44%, #b8d7c4 0 2.5%, #487864 2.6% 7%, #1e5b72 7.1% 12%, transparent 12.2%),
+        radial-gradient(circle at 55% 57%, rgba(91, 215, 246, 0.95) 0 16%, rgba(38, 109, 118, 0.9) 17% 32%, rgba(7, 10, 13, 0.2) 33%);
+      border: 1px solid rgba(91, 215, 246, 0.35);
+      box-shadow: inset -18px -22px 30px rgba(0, 0, 0, 0.45), 0 0 50px rgba(91, 215, 246, 0.16);
+    }
+
+    .signal {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 16px var(--red);
+      transform: translate(-50%, -50%);
+      opacity: 0;
+    }
+
+    .is-launching .signal {
+      animation: ping 1.1s ease-out infinite;
+      opacity: 1;
+    }
+
+    .floating-log {
+      position: absolute;
+      right: 0;
+      bottom: 8px;
+      width: min(100%, 310px);
+      min-height: 152px;
+      padding: 14px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(246, 195, 91, 0.24);
+      background: rgba(7, 9, 9, 0.72);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #dfffe7;
+      line-height: 1.65;
+      font-size: 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .floating-log p {
+      margin: 0;
+      word-break: break-word;
+    }
+
+    .bottom {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini {
+      min-height: 86px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .side {
+      display: grid;
+      grid-template-rows: auto minmax(220px, 1fr) auto;
+      gap: 18px;
+      min-height: calc(100vh - clamp(36px, 6vw, 68px));
+    }
+
+    .counter-window {
+      overflow: hidden;
+    }
+
+    .window-title {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .dots i {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      display: block;
+      background: var(--green);
+    }
+
+    .dots i:nth-child(2) {
+      background: var(--amber);
+    }
+
+    .dots i:nth-child(3) {
+      background: var(--red);
+    }
+
+    .counter-body {
+      padding: 16px;
+    }
+
+    .big-number {
+      margin: 4px 0 2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: clamp(35px, 5vw, 58px);
+      line-height: 1;
+      color: var(--green);
+      text-shadow: 0 0 24px rgba(88, 242, 161, 0.2);
+      font-variant-numeric: tabular-nums;
+      word-break: break-word;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      min-height: 82px;
+      padding: 12px;
+      border: 1px solid rgba(237, 247, 236, 0.1);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .stat strong {
+      display: block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 20px;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .queue {
+      min-height: 100%;
+      padding: 16px;
+    }
+
+    .queue h2,
+    .receipt h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .activity {
+      display: grid;
+      gap: 10px;
+    }
+
+    .activity-item {
+      padding: 11px 12px;
+      border-left: 3px solid rgba(88, 242, 161, 0.56);
+      background: rgba(255, 255, 255, 0.035);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: #dbe7df;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .receipt {
+      padding: 16px;
+      min-height: 178px;
+    }
+
+    .receipt-line {
+      margin: 10px 0 0;
+      color: #deebe5;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .receipt-code {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      color: var(--amber);
+      background: rgba(246, 195, 91, 0.08);
+      border: 1px solid rgba(246, 195, 91, 0.22);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .progress {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 5;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .progress span {
+      display: block;
+      width: var(--progress, 0%);
+      height: 100%;
+      background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+      box-shadow: 0 0 16px rgba(255, 77, 77, 0.3);
+      transition: width 220ms ease;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      z-index: 6;
+      width: min(calc(100vw - 28px), 540px);
+      transform: translate(-50%, 120px);
+      opacity: 0;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(88, 242, 161, 0.24);
+      background: rgba(10, 14, 13, 0.92);
+      box-shadow: var(--shadow);
+      color: #eaffef;
+      transition: transform 220ms ease, opacity 220ms ease;
+    }
+
+    .toast.show {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+
+    @keyframes sweep {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes ping {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.8), 0 0 20px rgba(255, 77, 77, 0.8);
+      }
+
+      100% {
+        box-shadow: 0 0 0 170px rgba(255, 77, 77, 0), 0 0 20px rgba(255, 77, 77, 0.2);
+      }
+    }
+
+    @media (max-width: 980px) {
+      .page,
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .main,
+      .side {
+        min-height: auto;
+      }
+
+      .hero {
+        min-height: auto;
+      }
+
+      .visual {
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding: 12px;
+        gap: 12px;
+      }
+
+      .topbar,
+      .launch-row {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .status-chip {
+        width: 100%;
+        text-align: center;
+      }
+
+      .mood-grid,
+      .bottom,
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .floating-log {
+        position: relative;
+        right: auto;
+        bottom: auto;
+        width: 100%;
+        margin-top: 16px;
+      }
+
+      .visual {
+        min-height: auto;
+      }
+
+      .launch,
+      .abort {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="space" aria-hidden="true"></canvas>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="page">
+    <section class="main">
+      <header class="topbar">
+        <div class="brand">
+          <div class="sigil" aria-hidden="true"></div>
+          <div>
+            <h1 class="brand-title">地球坐标广播控制台</h1>
+            <div class="brand-subtitle">红岸精神续费失败版</div>
+          </div>
+        </div>
+        <div class="status-chip" id="systemStatus">系统状态：假装冷静</div>
+      </header>
+
+      <section class="panel hero" id="heroPanel">
+        <div>
+          <p class="tiny">EARTH / SOL-3 / COMPLAINT CHANNEL</p>
+          <h2 class="headline">向<span>三体</span><br>发射坐标</h2>
+          <p class="copy">今日疲惫可上传，文明洗牌请排队。广播不调用真实定位，只定位你的精神状态。</p>
+
+          <div class="mood-grid" role="group" aria-label="今日精神状态">
+            <button class="mood" type="button" aria-pressed="true" data-mood="被工作夺舍">被工作夺舍</button>
+            <button class="mood" type="button" aria-pressed="false" data-mood="被房租追杀">被房租追杀</button>
+            <button class="mood" type="button" aria-pressed="false" data-mood="已读不回型崩溃">已读不回型崩溃</button>
+            <button class="mood" type="button" aria-pressed="false" data-mood="只是想重开">只是想重开</button>
+          </div>
+
+          <div class="launch-row">
+            <button class="launch" type="button" id="launchButton">发射坐标</button>
+            <button class="abort" type="button" id="comfortButton">先撤回一下</button>
+          </div>
+        </div>
+
+        <div class="visual" id="visual">
+          <div class="radar" aria-hidden="true">
+            <div class="signal"></div>
+          </div>
+          <div class="floating-log" aria-live="polite" id="logBox">
+            <p>[待机] 太阳系坐标缓存中</p>
+            <p>[待机] 人类文明投诉材料未压缩</p>
+            <p>[待机] 今日不建议硬撑</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom" aria-label="广播摘要">
+        <div class="mini">
+          <strong>坐标来源</strong>
+          <span class="tiny">用户主观崩溃半径 3 米内</span>
+        </div>
+        <div class="mini">
+          <strong>预计抵达</strong>
+          <span class="tiny">约 450 年后，请先睡一觉</span>
+        </div>
+        <div class="mini">
+          <strong>隐私声明</strong>
+          <span class="tiny">不读取真实定位，只保存本机点击数</span>
+        </div>
+      </section>
+    </section>
+
+    <aside class="side">
+      <section class="counter-window" aria-label="当前已点击数">
+        <div class="window-title">
+          <strong>实时发射窗口</strong>
+          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        </div>
+        <div class="counter-body">
+          <span class="tiny">当前已点击数</span>
+          <div class="big-number" id="localCount">0</div>
+          <div class="stats">
+            <div class="stat">
+              <span>本轮广播</span>
+              <strong id="sessionCount">0</strong>
+            </div>
+            <div class="stat">
+              <span>宇宙队列</span>
+              <strong id="queueCount">0</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel queue" aria-label="排队动态">
+        <h2>排队动态</h2>
+        <div class="activity" id="activityList">
+          <div class="activity-item">三体客服：坐标上传入口已开放。</div>
+          <div class="activity-item">太阳：今天不想加班，反射服务稍后重试。</div>
+          <div class="activity-item">地球文明：周报制度仍在初审。</div>
+        </div>
+      </section>
+
+      <section class="receipt" aria-label="末日回执">
+        <h2>末日回执</h2>
+        <p class="receipt-line" id="receiptText">还没有发射。控制台建议：先喝水，再决定是否毁灭世界。</p>
+        <span class="receipt-code" id="receiptCode">NO-SIGNAL</span>
+      </section>
+    </aside>
+  </main>
+
+  <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const storageKey = "earth-coordinate-broadcast-count";
+    const launchButton = document.querySelector("#launchButton");
+    const comfortButton = document.querySelector("#comfortButton");
+    const localCountEl = document.querySelector("#localCount");
+    const sessionCountEl = document.querySelector("#sessionCount");
+    const queueCountEl = document.querySelector("#queueCount");
+    const logBox = document.querySelector("#logBox");
+    const visual = document.querySelector("#visual");
+    const progressBar = document.querySelector("#progressBar");
+    const receiptText = document.querySelector("#receiptText");
+    const receiptCode = document.querySelector("#receiptCode");
+    const activityList = document.querySelector("#activityList");
+    const systemStatus = document.querySelector("#systemStatus");
+    const toast = document.querySelector("#toast");
+    const moodButtons = [...document.querySelectorAll(".mood")];
+
+    const formatter = new Intl.NumberFormat("zh-CN");
+    let localCount = Number(localStorage.getItem(storageKey) || 0);
+    let sessionCount = 0;
+    let currentMood = "被工作夺舍";
+    let queueCount = 7942331882 + getDaySeed();
+    let toastTimer = 0;
+
+    const logSteps = [
+      "定位：银河系 / 猎户臂 / 太阳系 / 地球",
+      "压缩人类文明投诉材料",
+      "检测今日精神状态",
+      "绕开真实定位权限",
+      "广播到宇宙收件箱",
+      "等待三体客服已读"
+    ];
+
+    const receipts = [
+      "坐标已发送。预计三体舰队抵达时间：约 450 年后。请先睡一觉。",
+      "三体客服已收到您的坐标，当前排队人数过多，请不要反复崩溃。",
+      "广播成功。三体人回复：你们先把无效会议废了，我们再考虑。",
+      "坐标进入初审。文明重置申请预计在宇宙热寂前完成。",
+      "发射完成。系统建议：今天先不毁灭地球，先毁灭待办事项。",
+      "消息已投递。太阳表示反射可以，情绪劳动另算。"
+    ];
+
+    const activities = [
+      "收到一份来自工位方向的坐标申请。",
+      "检测到有人把周一提交为文明罪证。",
+      "宇宙队列前进 1 位，精神状态后退 3 位。",
+      "广播中心驳回了“再坚持一下”的自动回复。",
+      "三体客服正在阅读地球人的加班记录。",
+      "地球坐标已附带一句：真的有点累。",
+      "文明洗牌申请被标记为“黑色幽默，高优先级”。"
+    ];
+
+    function getDaySeed() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 0);
+      return Math.floor((now - start) / 86400000) * 1137;
+    }
+
+    function formatNumber(value) {
+      return formatter.format(Math.max(0, Math.round(value)));
+    }
+
+    function renderCounts() {
+      localCountEl.textContent = formatNumber(localCount);
+      sessionCountEl.textContent = formatNumber(sessionCount);
+      queueCountEl.textContent = formatNumber(queueCount);
+    }
+
+    function setProgress(value) {
+      progressBar.style.setProperty("--progress", `${value}%`);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function pushActivity(text) {
+      const item = document.createElement("div");
+      item.className = "activity-item";
+      item.textContent = text;
+      activityList.prepend(item);
+      while (activityList.children.length > 5) {
+        activityList.lastElementChild.remove();
+      }
+    }
+
+    function setMood(mood) {
+      currentMood = mood;
+      moodButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.dataset.mood === mood));
+      });
+      systemStatus.textContent = `系统状态：${mood}`;
+    }
+
+    function buildReceiptCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "";
+      for (let index = 0; index < 6; index += 1) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return `REDCOAST-${code}`;
+    }
+
+    async function launch() {
+      launchButton.disabled = true;
+      visual.classList.add("is-launching");
+      logBox.innerHTML = "";
+      setProgress(4);
+      systemStatus.textContent = "系统状态：正在广播";
+
+      for (let index = 0; index < logSteps.length; index += 1) {
+        await wait(360 + Math.random() * 260);
+        const line = document.createElement("p");
+        const percent = Math.round(((index + 1) / logSteps.length) * 100);
+        line.textContent = `[${String(percent).padStart(3, "0")}%] ${logSteps[index]}`;
+        logBox.append(line);
+        setProgress(percent);
+      }
+
+      localCount += 1;
+      sessionCount += 1;
+      queueCount += 1 + Math.floor(Math.random() * 4);
+      localStorage.setItem(storageKey, String(localCount));
+      renderCounts();
+
+      const receipt = receipts[Math.floor(Math.random() * receipts.length)];
+      receiptText.textContent = `${receipt} 本次状态：${currentMood}。`;
+      receiptCode.textContent = buildReceiptCode();
+      pushActivity(activities[Math.floor(Math.random() * activities.length)]);
+      showToast("坐标已发射，地球暂时还在。");
+
+      await wait(280);
+      visual.classList.remove("is-launching");
+      launchButton.disabled = false;
+      systemStatus.textContent = "系统状态：假装冷静";
+      setTimeout(() => setProgress(0), 900);
+    }
+
+    function comfort() {
+      receiptText.textContent = "撤回成功。三体人没看见，今天先把自己从过载里捞出来一点。";
+      receiptCode.textContent = "WITHDRAWN";
+      pushActivity("用户选择撤回坐标，宇宙暂时松了一口气。");
+      showToast("已撤回：毁灭世界排到明天。");
+      systemStatus.textContent = "系统状态：先缓一下";
+      setProgress(0);
+      logBox.innerHTML = `
+        <p>[撤回] 广播链路已关闭</p>
+        <p>[建议] 喝水 / 闭眼 / 少看一条消息</p>
+        <p>[备注] 文明可以晚点再洗牌</p>
+      `;
+    }
+
+    function wait(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    moodButtons.forEach((button) => {
+      button.addEventListener("click", () => setMood(button.dataset.mood));
+    });
+
+    launchButton.addEventListener("click", launch);
+    comfortButton.addEventListener("click", comfort);
+
+    setInterval(() => {
+      queueCount += Math.random() > 0.55 ? 1 : 0;
+      renderCounts();
+    }, 1800);
+
+    renderCounts();
+
+    const canvas = document.querySelector("#space");
+    const context = canvas.getContext("2d");
+    const stars = [];
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+
+    function resizeCanvas() {
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = Math.floor(width * pixelRatio);
+      canvas.height = Math.floor(height * pixelRatio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      stars.length = 0;
+      const starCount = Math.min(180, Math.floor((width * height) / 6500));
+      for (let index = 0; index < starCount; index += 1) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          radius: Math.random() * 1.6 + 0.35,
+          speed: Math.random() * 0.28 + 0.08,
+          hue: Math.random() > 0.7 ? "246, 195, 91" : "210, 245, 225"
+        });
+      }
+    }
+
+    function drawSpace() {
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = "rgba(9, 10, 12, 0.28)";
+      context.fillRect(0, 0, width, height);
+
+      for (const star of stars) {
+        star.y += star.speed;
+        if (star.y > height + 4) {
+          star.y = -4;
+          star.x = Math.random() * width;
+        }
+        context.beginPath();
+        context.fillStyle = `rgba(${star.hue}, ${0.35 + Math.random() * 0.35})`;
+        context.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+        context.fill();
+      }
+
+      requestAnimationFrame(drawSpace);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    drawSpace();
+  </script>
+</body>
+</html>
