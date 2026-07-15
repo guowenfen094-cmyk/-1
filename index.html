@@ -194,6 +194,15 @@
     }
     .custom-mood-btn:hover { background: rgba(246,195,91,0.16); }
 
+    /* Risk hint */
+    .risk-hint {
+      margin: -6px 0 14px; font-size: 12px; color: var(--green);
+      display: flex; align-items: center; gap: 6px; transition: color 200ms;
+    }
+    .risk-hint::before { content: "◆"; font-size: 9px; }
+    .risk-hint.risky { color: var(--amber); }
+    .risk-hint.danger { color: var(--red); }
+
     /* Launch */
     .launch-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
     .launch {
@@ -324,10 +333,18 @@
     .tb-suns { display: flex; gap: 4px; font-size: 18px; }
     .tb-sun { transition: all 0.6s ease; display: inline-block; }
     .tb-sun.dim { opacity: 0.15; filter: grayscale(1); }
+    .tb-sun.faint { opacity: 0.55; filter: grayscale(0.35) brightness(0.9); transform: scale(0.72); }
+    .tb-sun.giant { transform: scale(1.4); filter: drop-shadow(0 0 7px rgba(255,120,60,0.85)); }
     .tb-era { font-size: 13px; font-weight: 600; }
     .tb-era.chaotic { color: var(--red); }
     .tb-era.stable { color: var(--green); }
     .tb-era-desc { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .tb-risk {
+      margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(237,247,236,0.12);
+      font-size: 11px; color: var(--green); letter-spacing: 0.02em; transition: color 200ms;
+    }
+    .tb-risk.risky { color: var(--amber); }
+    .tb-risk.danger { color: var(--red); }
 
     /* Counter */
     .counter-window { overflow: hidden; }
@@ -384,6 +401,19 @@
     }
     .history-item .h-code { font-family: ui-monospace, monospace; color: var(--amber); font-size: 11px; flex: 0 0 auto; }
     .history-item .h-mood { color: #b0c0b8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-item.failed { border-color: rgba(255,77,77,0.35); background: rgba(255,77,77,0.06); }
+    .history-item.failed .h-code { color: var(--red); }
+    .history-item.failed .h-mood::before { content: "✕ "; color: var(--red); }
+
+    /* History header + calendar entry */
+    .history-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .history-header h2 { margin: 0; }
+    .cal-entry-btn {
+      border: 1px solid rgba(91,215,246,0.3); background: rgba(91,215,246,0.08);
+      color: var(--cyan); border-radius: 999px; padding: 5px 12px; font-size: 12px;
+      cursor: pointer; transition: all 160ms; white-space: nowrap;
+    }
+    .cal-entry-btn:hover { background: rgba(91,215,246,0.16); }
 
     /* Receipt */
     .receipt { padding: 14px 16px; min-height: 150px; }
@@ -429,6 +459,99 @@
     }
     .shaking { animation: shake 0.35s ease; }
 
+    /* Glitch & failure */
+    @keyframes glitchFlicker {
+      0%, 100% { opacity: 1; transform: translateX(0); }
+      20% { opacity: 0.4; transform: translateX(-2px); color: var(--red); }
+      40% { opacity: 1; transform: translateX(1px); }
+      60% { opacity: 0.5; color: var(--amber); }
+      80% { opacity: 1; transform: translateX(-1px); }
+    }
+    .log-glitch { animation: glitchFlicker 0.5s ease; color: var(--amber) !important; }
+    @keyframes failFlash {
+      0%, 100% { filter: none; }
+      30% { filter: brightness(1.6) saturate(0) hue-rotate(-20deg); }
+      60% { filter: brightness(0.7) hue-rotate(160deg); }
+    }
+    .launch-failed .radar { animation: failFlash 0.6s ease; }
+
+    /* Calendar modal */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 20;
+      background: rgba(4,6,7,0.72); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+    }
+    .modal-overlay.show { opacity: 1; pointer-events: auto; }
+    .calendar-modal {
+      width: min(92vw, 480px); max-height: 86vh; overflow-y: auto;
+      background: var(--panel-solid); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px 18px 20px;
+      transform: translateY(12px); transition: transform 200ms ease;
+    }
+    .modal-overlay.show .calendar-modal { transform: translateY(0); }
+    .modal-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .cal-month-label { flex: 1; margin: 0; text-align: center; font-size: 16px; letter-spacing: -0.01em; }
+    .cal-nav, .modal-close {
+      width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04); color: var(--text); cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      transition: all 160ms;
+    }
+    .cal-nav:hover, .modal-close:hover { border-color: rgba(91,215,246,0.4); color: var(--cyan); }
+    .modal-close { color: var(--muted); }
+    .cal-summary {
+      font-size: 12px; color: var(--muted); text-align: center; margin: 0 0 12px;
+      padding-bottom: 10px; border-bottom: 1px dashed rgba(237,247,236,0.1);
+    }
+    .cal-summary strong { color: var(--green); }
+    .cal-summary .fail-count { color: var(--red); }
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+      font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 6px;
+    }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day {
+      aspect-ratio: 1; border: 1px solid rgba(237,247,236,0.08); border-radius: 8px;
+      background: rgba(255,255,255,0.02); color: var(--muted); cursor: default;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; font-size: 12px; padding: 2px; font: inherit;
+    }
+    .cal-day.empty { border: none; background: transparent; }
+    .cal-day.has-record {
+      cursor: pointer; color: var(--text); border-color: rgba(88,242,161,0.25);
+      background: rgba(88,242,161,0.05); transition: all 160ms;
+    }
+    .cal-day.has-record:hover { border-color: rgba(88,242,161,0.5); background: rgba(88,242,161,0.12); transform: translateY(-1px); }
+    .cal-day.today { border-color: rgba(246,195,91,0.6); box-shadow: 0 0 0 1px rgba(246,195,91,0.3) inset; }
+    .cal-day-num { font-variant-numeric: tabular-nums; }
+    .cal-day-dots { display: flex; gap: 3px; font-size: 9px; }
+    .cal-day-dots .dot-success { color: var(--green); }
+    .cal-day-dots .dot-fail { color: var(--red); }
+    .cal-legend { display: flex; gap: 14px; justify-content: center; margin-top: 12px; font-size: 11px; color: var(--muted); }
+    .cal-legend i.dot-success, .cal-legend i.dot-fail { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; }
+    .cal-legend i.dot-success { background: var(--green); }
+    .cal-legend i.dot-fail { background: var(--red); }
+    .cal-day-detail { padding-top: 4px; }
+    .cal-back-btn {
+      border: none; background: none; color: var(--cyan); cursor: pointer; font-size: 12px;
+      padding: 4px 0; margin-bottom: 8px;
+    }
+    .cal-day-title { margin: 0 0 10px; font-size: 14px; }
+    .cal-day-list { display: grid; gap: 8px; }
+    .cal-day-item {
+      display: grid; grid-template-columns: auto 1fr; gap: 4px 10px;
+      padding: 10px 12px; border: 1px solid rgba(237,247,236,0.09); border-radius: var(--radius);
+      background: rgba(255,255,255,0.02); font-size: 12px;
+    }
+    .cal-day-item.failed { border-color: rgba(255,77,77,0.3); background: rgba(255,77,77,0.05); }
+    .cdi-time { color: var(--muted); font-family: ui-monospace, monospace; }
+    .cdi-status { font-size: 11px; text-align: right; }
+    .cal-day-item:not(.failed) .cdi-status { color: var(--green); }
+    .cal-day-item.failed .cdi-status { color: var(--red); }
+    .cdi-mood { grid-column: 1 / -1; color: #e8f4f0; }
+    .cdi-code { grid-column: 1 / -1; font-family: ui-monospace, monospace; color: var(--amber); font-size: 10px; }
+
     /* Keyframes */
     @keyframes sweep { to { transform: rotate(360deg); } }
     @keyframes ping {
@@ -452,6 +575,8 @@
       .launch, .abort { width: 100%; }
       .launch-row { flex-direction: column; }
       .coord-display { grid-template-columns: 1fr; }
+      .calendar-modal { width: 100%; padding: 14px; }
+      .history-header { flex-wrap: wrap; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after {
@@ -478,8 +603,8 @@
           </div>
         </div>
         <div class="weather-chip" id="weatherChip">
-          <span id="weatherSuns">☀️☀️☀️</span>
-          <span id="weatherLabel">恒纪元</span>
+          <span id="weatherSuns">☀️✨✨</span>
+          <span id="weatherLabel">标准恒纪元</span>
         </div>
         <div class="status-chip" id="systemStatus">系统状态：假装冷静</div>
       </header>
@@ -525,6 +650,8 @@
             <input class="custom-mood-input" type="text" placeholder="自定义状态，如：被甲方折磨" maxlength="20" id="customMoodInput">
             <button class="custom-mood-btn" type="button" id="customMoodBtn">+ 添加</button>
           </div>
+
+          <p class="risk-hint" id="riskHint">标准恒纪元 · 当前发射成功率 100% · 无灾难，信号稳定</p>
 
           <div class="launch-row">
             <button class="launch" type="button" id="launchButton">发射坐标</button>
@@ -579,10 +706,11 @@
             <span class="tb-sun" id="sun2">☀️</span>
           </div>
           <div>
-            <div class="tb-era stable" id="tbEraLabel">恒纪元</div>
+            <div class="tb-era stable" id="tbEraLabel">恒纪元 · 标准恒纪元</div>
             <div class="tb-era-desc" id="tbEraDesc">三颗太阳运行平稳，文明安全</div>
           </div>
         </div>
+        <div class="tb-risk" id="tbRisk">标准恒纪元 · 当前发射成功率 100% · 无灾难，信号稳定</div>
       </div>
 
       <!-- Counter -->
@@ -614,7 +742,10 @@
 
       <!-- Launch history -->
       <section class="panel history-section" aria-label="发射历史">
-        <h2>发射历史</h2>
+        <div class="history-header">
+          <h2>发射历史</h2>
+          <button class="cal-entry-btn" type="button" id="openCalendarBtn">📅 发射日历</button>
+        </div>
         <div class="history-list" id="historyList">
           <div style="font-size:12px;color:var(--muted);">暂无发射记录</div>
         </div>
@@ -632,6 +763,37 @@
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <!-- Calendar Modal -->
+  <div class="modal-overlay" id="calendarOverlay" aria-hidden="true">
+    <div class="modal calendar-modal" role="dialog" aria-modal="true" aria-label="发射日历">
+      <div class="modal-header">
+        <button class="cal-nav" type="button" id="calPrevBtn" aria-label="上个月">‹</button>
+        <h3 class="cal-month-label" id="calMonthLabel">2026 年 7 月</h3>
+        <button class="cal-nav" type="button" id="calNextBtn" aria-label="下个月">›</button>
+        <button class="modal-close" type="button" id="calCloseBtn" aria-label="关闭日历">✕</button>
+      </div>
+
+      <p class="cal-summary" id="calSummary">本月暂无发射记录，宇宙很安静。</p>
+
+      <div class="cal-body" id="calMonthView">
+        <div class="cal-weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-legend">
+          <span><i class="dot-success"></i>成功</span>
+          <span><i class="dot-fail"></i>失败</span>
+        </div>
+      </div>
+
+      <div class="cal-day-detail" id="calDayDetail" hidden>
+        <button class="cal-back-btn" type="button" id="calBackBtn">‹ 返回月历</button>
+        <h4 class="cal-day-title" id="calDayTitle"></h4>
+        <div class="cal-day-list" id="calDayList"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Supabase 配置 ── 【请替换为你自己的 Project URL 和 anon key】
     const SUPABASE_URL  = 'https://iuwnwvdopkroranxwgqn.supabase.co';
@@ -645,8 +807,9 @@
 
     // ── Constants ──
     const STORAGE_KEY = 'earth-coord-v2-count';
-    const HISTORY_KEY = 'earth-coord-v2-history';
-    const MAX_HISTORY = 5;
+    const HISTORY_KEY = 'earth-coord-v2-history'; // 旧版仅存最近5条，保留用于一次性迁移
+    const FULL_LOG_KEY = 'earth-coord-v2-full-log'; // 新版：完整发射记录，供日历查询
+    const MAX_HISTORY_DISPLAY = 5; // 侧边栏「发射历史」只展示最近 N 条，完整记录在日历里看
 
     // ── DOM refs ──
     const launchButton    = document.querySelector('#launchButton');
@@ -667,8 +830,23 @@
     const customMoodInput = document.querySelector('#customMoodInput');
     const customMoodBtn   = document.querySelector('#customMoodBtn');
     const historyList     = document.querySelector('#historyList');
+    const openCalendarBtn = document.querySelector('#openCalendarBtn');
+    const calendarOverlay = document.querySelector('#calendarOverlay');
+    const calCloseBtn     = document.querySelector('#calCloseBtn');
+    const calPrevBtn      = document.querySelector('#calPrevBtn');
+    const calNextBtn      = document.querySelector('#calNextBtn');
+    const calMonthLabel   = document.querySelector('#calMonthLabel');
+    const calSummary      = document.querySelector('#calSummary');
+    const calMonthView    = document.querySelector('#calMonthView');
+    const calGrid         = document.querySelector('#calGrid');
+    const calDayDetail    = document.querySelector('#calDayDetail');
+    const calDayTitle     = document.querySelector('#calDayTitle');
+    const calDayList      = document.querySelector('#calDayList');
+    const calBackBtn      = document.querySelector('#calBackBtn');
     const tbEraLabel      = document.querySelector('#tbEraLabel');
     const tbEraDesc       = document.querySelector('#tbEraDesc');
+    const tbRisk          = document.querySelector('#tbRisk');
+    const riskHint        = document.querySelector('#riskHint');
     const weatherChip     = document.querySelector('#weatherChip');
     const weatherLabel    = document.querySelector('#weatherLabel');
     const weatherSuns     = document.querySelector('#weatherSuns');
@@ -686,7 +864,8 @@
     let queueCount   = 7942331882 + getDaySeed();
     let toastTimer   = 0;
     let isLaunching  = false;
-    let launchHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+    let fullLaunchLog = loadFullLaunchLog();
+    let currentEra = null; // 由 eraStates[0] 初始化，见下方 updateWeather(eraStates[0])
 
     // ── Data ──
     const logStepTemplates = [
@@ -723,11 +902,76 @@
       '黑暗森林广播频段当前占用率：99.7%。'
     ];
 
+    // 三体天气设定：数据来源于官方天气文档，出现几率、灾难等级均按文档还原
     const eraStates = [
-      { era: '恒纪元', desc: '三颗太阳运行平稳，文明安全', chaotic: false, suns: [true, true, true] },
-      { era: '乱纪元', desc: '三体运动失控，地球化迫在眉睫', chaotic: true, suns: [true, false, true] },
-      { era: '极寒乱纪元', desc: '太阳全部熄灭，末日启动', chaotic: true, suns: [false, false, false] },
-      { era: '双日恒纪元', desc: '两日运行，暂时稳定', chaotic: false, suns: [true, true, false] },
+      {
+        category: '恒纪元', era: '标准恒纪元',
+        desc: '单颗太阳稳定当空，另两颗被甩至远轨。气温恒定，昼夜规律，无极端灾害，三体人可正常耕作繁衍',
+        disasterLevel: 0, probability: 25, chaotic: false,
+        suns: ['bright', 'faint', 'faint'],
+        failRate: 0, riskLabel: '无灾难，信号稳定',
+        interference: [],
+        receipts: [
+          '坐标已发送。预计三体舰队抵达时间：约 450 年后。请先睡一觉。',
+          '三体客服已收到，当前排队过多，请不要反复崩溃。',
+          '广播成功。三体人回复：你们先把无效会议废了，我们再考虑。',
+          '发射完成。今天先不毁灭地球，先毁灭待办事项。'
+        ]
+      },
+      {
+        category: '乱纪元', era: '双日凌空',
+        desc: '两颗太阳近距抵达，持续极端高温，河水加速蒸发、土地干裂，三体人正紧急脱水应对',
+        disasterLevel: 2, probability: 45, chaotic: true,
+        suns: ['bright', 'bright', 'faint'],
+        failRate: 0.4, riskLabel: '中度灾难，信号轻微失真',
+        interference: ['⚠ 地表温度突破临界值，河流加速蒸发', '⚠ 三体人脱水程序已启动，通讯资源受限', '⚠ 强沙尘暴导致信号衰减'],
+        receipts: [
+          '信号顶着高温勉强送达，三体客服一边脱水一边回复："人类也挺不容易"。',
+          '广播成功，附带一句烫得冒烟的备注：地表 90℃，建议下次错峰发射。',
+          '坐标抵达，三体人表示他们比你更想脱水逃避现实。'
+        ]
+      },
+      {
+        category: '乱纪元', era: '多飞星严寒',
+        desc: '太阳远离行星，全域进入极寒黑暗，海洋冻结、大气凝固，裸露生物瞬间冻裂',
+        disasterLevel: 3, probability: 25, chaotic: true,
+        sunsVariants: [
+          ['faint', 'dark', 'dark'],
+          ['faint', 'faint', 'dark'],
+          ['faint', 'faint', 'faint']
+        ],
+        failRate: 0.6, riskLabel: '重度灾难，信号严重衰减',
+        interference: ['⚠ 大气正在冻结，广播天线开始结霜', '⚠ 检测到零下极限低温，电路降频运行', '⚠ 飞星轨迹漂移，坐标持续偏移'],
+        receipts: [
+          '信号在结冰前的最后一毫秒挤了出去，三体客服：勇士，先去暖气房。',
+          '广播设备冻裂了一半才发出去，三体人回复了个冷得直哆嗦的表情包。',
+          '坐标送达，但三体星系已经安静得像被按了暂停键。'
+        ]
+      },
+      {
+        category: '乱纪元', era: '三日凌空',
+        desc: '三颗巨日同时高悬，地表数百摄氏度，海水沸腾、岩石熔化，地表生态近乎完全毁灭',
+        disasterLevel: 4, probability: 5, chaotic: true,
+        suns: ['giant', 'giant', 'giant'],
+        failRate: 0.9, riskLabel: '毁灭级灾难，信号濒临中断',
+        interference: ['⚠ 地表温度突破 400℃，设备即将熔毁', '⚠ 岩石熔化导致基站坍塌', '⚠ 三日引力叠加，天线结构扭曲'],
+        receipts: [
+          '信号在熔毁前 0.1 秒逃了出去，三体客服在地下掩体里回复了个感叹号。',
+          '坐标勉强送达，附带说明：地表已无法居住，欢迎参观地心分部。'
+        ]
+      },
+      {
+        category: '乱纪元', era: '太阳掠日 / 三日连珠',
+        desc: '太阳近距离掠过或三日引力连珠，地震、海啸、火山集体爆发，复合型毁灭灾害',
+        disasterLevel: 4, probability: 2, chaotic: true,
+        suns: ['giant', 'bright', 'bright'],
+        failRate: 1, riskLabel: '复合型灾难，信号彻底湮灭',
+        interference: ['⚠ 引力剧烈扰动，坐标基准持续漂移', '⚠ 全域地震导致基站集体失联', '⚠ 复合型灾害叠加，链路几近崩溃'],
+        receipts: [
+          '信号在天翻地覆之际侥幸送达，三体客服：这次真的算你厉害。',
+          '坐标穿越火山灰与海啸抵达，对方沉默良久后回复："保重"。'
+        ]
+      }
     ];
 
     // ── Helpers ──
@@ -735,6 +979,33 @@
       const now = new Date();
       const start = new Date(now.getFullYear(), 0, 0);
       return Math.floor((now - start) / 86400000) * 1137;
+    }
+    function formatDateKey(d) {
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    }
+    function formatTimeLabel(d) {
+      return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    // 读取完整发射记录；若不存在则尝试从旧版「最近5条」历史做一次性迁移并落盘
+    function loadFullLaunchLog() {
+      const stored = localStorage.getItem(FULL_LOG_KEY);
+      if (stored) {
+        try { return JSON.parse(stored); } catch (e) { return []; }
+      }
+      const legacy = localStorage.getItem(HISTORY_KEY);
+      if (legacy) {
+        try {
+          const old = JSON.parse(legacy);
+          const now = new Date();
+          const migrated = old.map(h => ({
+            code: h.code, mood: h.mood, failed: !!h.failed, era: '',
+            date: formatDateKey(now), time: formatTimeLabel(now), ts: now.getTime()
+          }));
+          localStorage.setItem(FULL_LOG_KEY, JSON.stringify(migrated));
+          return migrated;
+        } catch (e) { return []; }
+      }
+      return [];
     }
     function formatNumber(v) { return formatter.format(Math.max(0, Math.round(v))); }
     function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -760,17 +1031,49 @@
     updateCoords();
 
     // ── Three-body weather ──
+    const SUN_EMOJI = { bright: '☀️', faint: '✨', dark: '⬛', giant: '🔥' };
+    function applySunVisuals(sunsState) {
+      [sun0, sun1, sun2].forEach((el, i) => {
+        const s = sunsState[i] || 'dark';
+        el.classList.remove('dim', 'faint', 'giant');
+        if (s === 'dark') el.classList.add('dim');
+        else if (s === 'faint') el.classList.add('faint');
+        else if (s === 'giant') el.classList.add('giant');
+      });
+      weatherSuns.textContent = sunsState.map(s => SUN_EMOJI[s] || '⬛').join('');
+    }
+    // 按文档「出现几率」做加权随机，而不是等概率抽取
+    function pickWeighted(list) {
+      const total = list.reduce((sum, item) => sum + item.probability, 0);
+      let r = Math.random() * total;
+      for (const item of list) {
+        r -= item.probability;
+        if (r <= 0) return item;
+      }
+      return list[list.length - 1];
+    }
     function updateWeather(state) {
-      [sun0, sun1, sun2].forEach((el, i) => el.classList.toggle('dim', !state.suns[i]));
-      tbEraLabel.textContent = state.era;
+      currentEra = state;
+      const sunsState = state.sunsVariants ? pick(state.sunsVariants) : state.suns;
+      applySunVisuals(sunsState);
+      tbEraLabel.textContent = state.category + ' · ' + state.era;
       tbEraLabel.className = 'tb-era ' + (state.chaotic ? 'chaotic' : 'stable');
       tbEraDesc.textContent = state.desc;
       weatherLabel.textContent = state.era;
       weatherChip.classList.toggle('chaotic', state.chaotic);
-      weatherSuns.textContent = state.suns.map(s => s ? '☀️' : '⬛').join('');
+      updateRiskUI(state);
+    }
+    function updateRiskUI(state) {
+      const successPct = Math.round((1 - state.failRate) * 100);
+      const level = state.failRate >= 0.6 ? 'danger' : state.failRate >= 0.3 ? 'risky' : '';
+      const text = state.era + ' · 当前发射成功率 ' + successPct + '% · ' + state.riskLabel;
+      tbRisk.textContent = text;
+      tbRisk.className = 'tb-risk' + (level ? ' ' + level : '');
+      riskHint.textContent = text;
+      riskHint.className = 'risk-hint' + (level ? ' ' + level : '');
     }
     updateWeather(eraStates[0]);
-    setInterval(() => updateWeather(pick(eraStates)), 12000);
+    setInterval(() => updateWeather(pickWeighted(eraStates)), 12000);
 
     // ── Supabase: 读取全网计数 ──
     async function fetchGlobalCount() {
@@ -870,23 +1173,127 @@
     });
     customMoodInput.addEventListener('keydown', e => { if (e.key === 'Enter') customMoodBtn.click(); });
 
-    // ── History ──
+    // ── History（侧边栏仅展示最近几条，完整记录见日历） ──
     function renderHistory() {
-      if (launchHistory.length === 0) {
+      const recent = fullLaunchLog.slice(0, MAX_HISTORY_DISPLAY);
+      if (recent.length === 0) {
         historyList.innerHTML = '<div style="font-size:12px;color:var(--muted);">暂无发射记录</div>';
         return;
       }
-      historyList.innerHTML = launchHistory.map(h =>
-        '<div class="history-item"><span class="h-mood">' + h.mood + '</span><span class="h-code">' + h.code + '</span></div>'
+      historyList.innerHTML = recent.map(h =>
+        '<div class="history-item' + (h.failed ? ' failed' : '') + '"><span class="h-mood">' + h.mood + '</span><span class="h-code">' + h.code + '</span></div>'
       ).join('');
     }
-    function pushHistory(code, mood) {
-      launchHistory.unshift({ code, mood });
-      if (launchHistory.length > MAX_HISTORY) launchHistory = launchHistory.slice(0, MAX_HISTORY);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(launchHistory));
+    function pushHistory(code, mood, failed, eraName) {
+      const now = new Date();
+      fullLaunchLog.unshift({
+        code, mood, failed: !!failed,
+        era: eraName || '',
+        date: formatDateKey(now),
+        time: formatTimeLabel(now),
+        ts: now.getTime()
+      });
+      localStorage.setItem(FULL_LOG_KEY, JSON.stringify(fullLaunchLog));
       renderHistory();
+      if (calendarOverlay.classList.contains('show')) renderCalendarMonth();
     }
     renderHistory();
+
+    // ── Calendar ──
+    let calViewYear, calViewMonth; // calViewMonth: 0-11
+
+    function openCalendar() {
+      const now = new Date();
+      calViewYear = now.getFullYear();
+      calViewMonth = now.getMonth();
+      showDayDetail(null);
+      renderCalendarMonth();
+      calendarOverlay.classList.add('show');
+      calendarOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeCalendar() {
+      calendarOverlay.classList.remove('show');
+      calendarOverlay.setAttribute('aria-hidden', 'true');
+    }
+    function changeCalMonth(delta) {
+      calViewMonth += delta;
+      if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
+      else if (calViewMonth > 11) { calViewMonth = 0; calViewYear++; }
+      showDayDetail(null);
+      renderCalendarMonth();
+    }
+    function renderCalendarMonth() {
+      calMonthLabel.textContent = calViewYear + ' 年 ' + (calViewMonth + 1) + ' 月';
+
+      const monthPrefix = calViewYear + '-' + String(calViewMonth + 1).padStart(2, '0') + '-';
+      const logsByDate = {};
+      let monthSuccess = 0, monthFail = 0;
+      fullLaunchLog.forEach(entry => {
+        if (entry.date && entry.date.indexOf(monthPrefix) === 0) {
+          (logsByDate[entry.date] = logsByDate[entry.date] || []).push(entry);
+          if (entry.failed) monthFail++; else monthSuccess++;
+        }
+      });
+
+      const total = monthSuccess + monthFail;
+      calSummary.innerHTML = total === 0
+        ? '本月暂无发射记录，宇宙很安静。'
+        : '本月共发射 <strong>' + total + '</strong> 次 · 成功 <strong>' + monthSuccess + '</strong> 次 · 失败 <span class="fail-count">' + monthFail + '</span> 次';
+
+      const firstDay = new Date(calViewYear, calViewMonth, 1);
+      const startWeekday = firstDay.getDay();
+      const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+      const todayKey = formatDateKey(new Date());
+
+      let html = '';
+      for (let i = 0; i < startWeekday; i++) html += '<div class="cal-day empty"></div>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateKey = monthPrefix + String(d).padStart(2, '0');
+        const logs = logsByDate[dateKey] || [];
+        const successCount = logs.filter(l => !l.failed).length;
+        const failCount = logs.filter(l => l.failed).length;
+        const hasRecord = logs.length > 0;
+        html += '<button type="button" class="cal-day' + (hasRecord ? ' has-record' : '') + (dateKey === todayKey ? ' today' : '') + '"' +
+          (hasRecord ? ' data-date="' + dateKey + '"' : ' disabled') + '>' +
+          '<span class="cal-day-num">' + d + '</span>' +
+          (hasRecord ? '<span class="cal-day-dots">' +
+            (successCount ? '<i class="dot-success">' + successCount + '</i>' : '') +
+            (failCount ? '<i class="dot-fail">' + failCount + '</i>' : '') +
+            '</span>' : '') +
+          '</button>';
+      }
+      calGrid.innerHTML = html;
+      calGrid.querySelectorAll('.cal-day.has-record').forEach(btn => {
+        btn.addEventListener('click', () => showDayDetail(btn.dataset.date, logsByDate[btn.dataset.date]));
+      });
+    }
+    function showDayDetail(dateKey, logs) {
+      if (!dateKey) {
+        calDayDetail.hidden = true;
+        calMonthView.hidden = false;
+        return;
+      }
+      const sorted = [...logs].sort((a, b) => b.ts - a.ts);
+      calDayTitle.textContent = dateKey + ' · 共 ' + sorted.length + ' 次发射';
+      calDayList.innerHTML = sorted.map(l =>
+        '<div class="cal-day-item' + (l.failed ? ' failed' : '') + '">' +
+          '<span class="cdi-time">' + l.time + '</span>' +
+          '<span class="cdi-status">' + (l.failed ? '发射失败' : '发射成功') + '</span>' +
+          '<span class="cdi-mood">状态：' + l.mood + (l.era ? ' · 天气：' + l.era : '') + '</span>' +
+          '<span class="cdi-code">' + l.code + '</span>' +
+        '</div>'
+      ).join('');
+      calMonthView.hidden = true;
+      calDayDetail.hidden = false;
+    }
+
+    openCalendarBtn.addEventListener('click', openCalendar);
+    calCloseBtn.addEventListener('click', closeCalendar);
+    calPrevBtn.addEventListener('click', () => changeCalMonth(-1));
+    calNextBtn.addEventListener('click', () => changeCalMonth(1));
+    calBackBtn.addEventListener('click', () => showDayDetail(null));
+    calendarOverlay.addEventListener('click', e => { if (e.target === calendarOverlay) closeCalendar(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && calendarOverlay.classList.contains('show')) closeCalendar(); });
 
     // ── Audio (Web Audio API) ──
     let audioCtx = null;
@@ -940,6 +1347,37 @@
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
       osc.start(); osc.stop(ctx.currentTime + 0.36);
     }
+    function playFailSound() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.55);
+      osc.start(); osc.stop(ctx.currentTime + 0.56);
+    }
+    function playSuccessSound() {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      // 上扬三音阶，营造"坐标送达"的愉悦确认感
+      const times = [0, 0.1, 0.2];
+      const freqs = [660, 880, 1320];
+      times.forEach((t, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freqs[i], ctx.currentTime + t);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime + t);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.25);
+        osc.start(ctx.currentTime + t);
+        osc.stop(ctx.currentTime + t + 0.26);
+      });
+    }
 
     // ── Shake ──
     function shakeScreen() {
@@ -961,18 +1399,40 @@
       shakeScreen();
       playLaunchSound();
 
+      const era = currentEra || eraStates[0];
+      const willFail = Math.random() < era.failRate;
+
       const steps = [...logStepTemplates];
       steps[3] = '检测今日精神状态：' + currentMood;
 
-      for (let i = 0; i < steps.length; i++) {
+      // 灾难天气（灾难等级 > 0）：插入干扰日志
+      if (era.interference && era.interference.length) {
+        steps.splice(4, 0, pick(era.interference));
+        if (era.chaotic && Math.random() < 0.6) steps.splice(5, 0, pick(era.interference));
+      }
+
+      // 若判定失败，则在接近尾声时截断广播链路
+      const cutoffIndex = willFail
+        ? Math.max(2, Math.floor(steps.length * (0.5 + Math.random() * 0.3)))
+        : steps.length;
+
+      for (let i = 0; i < cutoffIndex; i++) {
         await wait(340 + Math.random() * 240);
         const line = document.createElement('p');
         const pct  = Math.round(((i + 1) / steps.length) * 100);
         line.textContent = '[' + String(pct).padStart(3, '0') + '%] ' + steps[i];
+        if (era.chaotic) line.classList.add('log-glitch');
         logBox.append(line);
         setProgress(pct);
+        if (era.chaotic && Math.random() < 0.3) shakeScreen();
       }
 
+      if (willFail) {
+        await failLaunch(era);
+        return;
+      }
+
+      playSuccessSound();
       localCount++;
       sessionCount++;
       queueCount += 1 + Math.floor(Math.random() * 3);
@@ -982,12 +1442,13 @@
       // 全网计数 +1（异步，不阻塞动画）
       incrementGlobalCount();
 
-      const receipt = pick(receipts);
+      const pool = (era.receipts && era.receipts.length) ? era.receipts.concat(receipts) : receipts;
+      const receipt = pick(pool);
       const code = buildReceiptCode();
       receiptText.textContent = receipt + ' 本次状态：' + currentMood + '。';
       receiptCode.textContent = code;
       pushActivity(pick(activities));
-      pushHistory(code, currentMood);
+      pushHistory(code, currentMood, false, era.era);
       showToast('坐标已发射 · 编号 ' + code);
 
       await wait(260);
@@ -996,6 +1457,34 @@
       isLaunching = false;
       systemStatus.textContent = '系统状态：假装冷静';
       setTimeout(() => setProgress(0), 1000);
+    }
+
+    // ── Launch failure (三体天气导致的发射失败) ──
+    async function failLaunch(era) {
+      const failLine = document.createElement('p');
+      failLine.textContent = '[ERR!] 信号中断 · ' + era.era + ' 干扰过强，链路已断开';
+      failLine.classList.add('log-glitch');
+      logBox.append(failLine);
+      setProgress(0);
+      playFailSound();
+      visual.classList.add('launch-failed');
+      shakeScreen();
+
+      sessionCount++;
+      const code = 'INTERCEPTED-' + buildReceiptCode().split('-')[1];
+      receiptText.textContent = '发射失败：' + era.desc + '，信号在' + era.era + '的干扰中被截断，未能送达三体。建议等天气好转后重试。';
+      receiptCode.textContent = code;
+      pushActivity('一次坐标发射被' + era.era + '的干扰吞没，未能送达。');
+      pushHistory(code, currentMood, true, era.era);
+      showToast('发射失败 · ' + era.era + ' 信号中断');
+
+      await wait(500);
+      visual.classList.remove('launch-failed');
+      visual.classList.remove('is-launching');
+      launchButton.disabled = false;
+      isLaunching = false;
+      systemStatus.textContent = '系统状态：假装冷静';
+      setTimeout(() => setProgress(0), 800);
     }
 
     // ── Comfort ──
