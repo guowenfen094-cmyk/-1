@@ -194,6 +194,25 @@
     }
     .custom-mood-btn:hover { background: rgba(246,195,91,0.16); }
 
+    /* 自定义状态标签（可复用、可删除、记忆历史） */
+    .custom-mood-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+    .custom-mood-list:empty { display: none; }
+    .custom-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      min-height: 34px; padding: 0 6px 0 12px;
+      border: 1px solid rgba(237,247,236,0.11); border-radius: var(--radius);
+      background: rgba(255,255,255,0.035); color: #ccd8d2; cursor: pointer;
+      font: inherit; font-size: 13px; transition: all 160ms;
+    }
+    .custom-chip:hover { border-color: rgba(246,195,91,0.45); background: rgba(246,195,91,0.1); color: #fff6de; }
+    .custom-chip[aria-pressed="true"] { border-color: rgba(246,195,91,0.6); background: rgba(246,195,91,0.15); color: #fff6de; box-shadow: 0 0 12px rgba(246,195,91,0.12); }
+    .chip-remove {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%; flex: 0 0 auto;
+      font-size: 14px; line-height: 1; color: var(--muted); transition: all 140ms;
+    }
+    .chip-remove:hover { background: rgba(255,77,77,0.2); color: var(--red); }
+
     /* Risk hint */
     .risk-hint {
       margin: -6px 0 14px; font-size: 12px; color: var(--green);
@@ -714,6 +733,8 @@
             <button class="custom-mood-btn" type="button" id="customMoodBtn">+ 添加</button>
           </div>
 
+          <div class="custom-mood-list" id="customMoodList" aria-label="自定义精神状态"></div>
+
           <p class="risk-hint" id="riskHint">标准恒纪元 · 当前发射成功率 100% · 无灾难，信号稳定</p>
 
           <div class="launch-row">
@@ -909,6 +930,7 @@
     const moodButtons     = [...document.querySelectorAll('.mood')];
     const customMoodInput = document.querySelector('#customMoodInput');
     const customMoodBtn   = document.querySelector('#customMoodBtn');
+    const customMoodList  = document.querySelector('#customMoodList');
     const historyList     = document.querySelector('#historyList');
     const openCalendarBtn = document.querySelector('#openCalendarBtn');
     const calendarOverlay = document.querySelector('#calendarOverlay');
@@ -1242,26 +1264,74 @@
     }
 
     // ── Mood ──
+    const CUSTOM_MOODS_KEY = 'earth-coord-custom-moods';
+    const MAX_CUSTOM_MOODS = 8;
     let isCustomMood = false; // 是否为用户自定义吐槽（仅此时才请求 LLM 定制回复）
+    let customMoods = [];
+    try { customMoods = JSON.parse(localStorage.getItem(CUSTOM_MOODS_KEY) || '[]'); } catch (e) { customMoods = []; }
+
+    function escHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+    // 渲染自定义状态标签；当前选中的高亮，其余可点选/删除
+    function renderCustomMoods() {
+      customMoodList.innerHTML = customMoods.map(m => {
+        const selected = isCustomMood && m === currentMood;
+        const e = escHtml(m);
+        return '<button class="custom-chip" type="button" data-mood="' + e + '" aria-pressed="' + selected + '">' +
+          '<span class="chip-text">' + e + '</span>' +
+          '<span class="chip-remove" data-remove="' + e + '" role="button" aria-label="删除">×</span>' +
+        '</button>';
+      }).join('');
+    }
+
     function setMood(mood) {
       currentMood = mood;
       isCustomMood = false;
       moodButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mood === mood)));
       systemStatus.textContent = '系统状态：' + mood;
+      renderCustomMoods();
+    }
+    function setCustomMood(val) {
+      currentMood = val;
+      isCustomMood = true;
+      moodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+      systemStatus.textContent = '系统状态：' + val;
+      renderCustomMoods();
+    }
+    function removeCustomMood(val) {
+      customMoods = customMoods.filter(m => m !== val);
+      localStorage.setItem(CUSTOM_MOODS_KEY, JSON.stringify(customMoods));
+      if (isCustomMood && val === currentMood) {
+        setMood(moodButtons[0].dataset.mood); // 删的是当前选中项，回落到第一个预设
+      } else {
+        renderCustomMoods();
+      }
     }
     moodButtons.forEach(b => b.addEventListener('click', () => setMood(b.dataset.mood)));
 
     customMoodBtn.addEventListener('click', () => {
       const val = customMoodInput.value.trim();
       if (!val) return showToast('请先输入你的精神状态~');
-      currentMood = val;
-      isCustomMood = true;
-      moodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
-      systemStatus.textContent = '系统状态：' + val;
-      showToast('已设定状态：' + val);
+      customMoods = customMoods.filter(m => m !== val); // 去重后置顶
+      customMoods.unshift(val);
+      if (customMoods.length > MAX_CUSTOM_MOODS) customMoods = customMoods.slice(0, MAX_CUSTOM_MOODS);
+      localStorage.setItem(CUSTOM_MOODS_KEY, JSON.stringify(customMoods));
+      setCustomMood(val);
+      showToast('已添加并选中：' + val);
       customMoodInput.value = '';
     });
     customMoodInput.addEventListener('keydown', e => { if (e.key === 'Enter') customMoodBtn.click(); });
+
+    // 点标签选中它，点标签上的 × 删除它
+    customMoodList.addEventListener('click', e => {
+      const removeEl = e.target.closest('.chip-remove');
+      if (removeEl) { removeCustomMood(removeEl.dataset.remove); return; }
+      const chip = e.target.closest('.custom-chip');
+      if (chip) setCustomMood(chip.dataset.mood);
+    });
+
+    renderCustomMoods(); // 初始渲染已保存的自定义状态
 
     // ── History（侧边栏仅展示最近几条，完整记录见日历） ──
     function renderHistory() {
