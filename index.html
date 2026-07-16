@@ -552,6 +552,69 @@
     .cdi-mood { grid-column: 1 / -1; color: #e8f4f0; }
     .cdi-code { grid-column: 1 / -1; font-family: ui-monospace, monospace; color: var(--amber); font-size: 10px; }
 
+    /* 三体回信弹窗（发射后的高光展示） */
+    .reply-overlay {
+      position: fixed; inset: 0; z-index: 30;
+      background: rgba(4,6,7,0.8); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 260ms ease;
+    }
+    .reply-overlay.show { opacity: 1; pointer-events: auto; }
+    .reply-modal {
+      width: min(92vw, 540px);
+      background: linear-gradient(160deg, rgba(20,26,28,0.96), rgba(10,14,15,0.98));
+      border: 1px solid rgba(88,242,161,0.28);
+      border-radius: 16px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(88,242,161,0.1);
+      padding: 32px 30px 26px; text-align: center;
+      transform: translateY(20px) scale(0.96); opacity: 0;
+      transition: transform 320ms cubic-bezier(0.34,1.56,0.64,1), opacity 260ms ease;
+    }
+    .reply-overlay.show .reply-modal { transform: translateY(0) scale(1); opacity: 1; }
+    .reply-role {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--green); letter-spacing: 0.04em;
+      padding: 6px 14px; border-radius: 999px;
+      border: 1px solid rgba(88,242,161,0.32); background: rgba(88,242,161,0.08);
+      margin-bottom: 22px; transition: all 200ms;
+    }
+    .reply-role-icon { font-size: 15px; }
+    .reply-text {
+      font-size: clamp(19px, 3.2vw, 27px); line-height: 1.62;
+      color: #f0faf4; margin: 0 0 24px; min-height: 2.4em;
+      font-weight: 500; letter-spacing: -0.01em; word-break: break-word;
+    }
+    .reply-text.typing::after {
+      content: '▋'; color: var(--green); margin-left: 2px;
+      animation: caret 0.9s step-end infinite;
+    }
+    @keyframes caret { 50% { opacity: 0; } }
+    .reply-meta { margin-bottom: 22px; }
+    .reply-code {
+      display: inline-block; padding: 6px 12px; border-radius: 8px;
+      font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em;
+      color: var(--amber); background: rgba(246,195,91,0.08); border: 1px solid rgba(246,195,91,0.2);
+    }
+    .reply-actions { display: flex; justify-content: center; }
+    .reply-close-btn {
+      min-height: 44px; padding: 0 28px; border: 0; border-radius: 10px; cursor: pointer;
+      font-size: 15px; font-weight: 700; color: #06231a;
+      background: linear-gradient(135deg, var(--green), #3bbf7e);
+      box-shadow: 0 8px 24px rgba(88,242,161,0.25); transition: all 150ms;
+    }
+    .reply-close-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    /* 角色配色主题 */
+    .reply-modal.role-luoji { border-color: rgba(246,195,91,0.3); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(246,195,91,0.1); }
+    .reply-modal.role-luoji .reply-role { color: var(--amber); border-color: rgba(246,195,91,0.35); background: rgba(246,195,91,0.08); }
+    .reply-modal.role-luoji .reply-text.typing::after { color: var(--amber); }
+    .reply-modal.role-zhizi { border-color: rgba(91,215,246,0.3); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(91,215,246,0.1); }
+    .reply-modal.role-zhizi .reply-role { color: var(--cyan); border-color: rgba(91,215,246,0.35); background: rgba(91,215,246,0.08); }
+    .reply-modal.role-zhizi .reply-text.typing::after { color: var(--cyan); }
+    .reply-modal.role-fail { border-color: rgba(255,77,77,0.32); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(255,77,77,0.1); }
+    .reply-modal.role-fail .reply-role { color: var(--red); border-color: rgba(255,77,77,0.35); background: rgba(255,77,77,0.08); }
+    .reply-modal.role-fail .reply-text.typing::after { color: var(--red); }
+    .reply-modal.role-fail .reply-close-btn { background: linear-gradient(135deg, #ff6b6b, #c0392b); color: #fff; box-shadow: 0 8px 24px rgba(255,77,77,0.25); }
+
     /* Keyframes */
     @keyframes sweep { to { transform: rotate(360deg); } }
     @keyframes ping {
@@ -794,6 +857,23 @@
     </div>
   </div>
 
+  <!-- 三体回信弹窗（发射后的高光展示） -->
+  <div class="reply-overlay" id="replyOverlay" aria-hidden="true">
+    <div class="reply-modal" id="replyModal" role="dialog" aria-modal="true" aria-label="三体回信">
+      <div class="reply-role">
+        <span class="reply-role-icon" id="replyRoleIcon">📡</span>
+        <span id="replyRoleName">来自三体广播中心的回信</span>
+      </div>
+      <p class="reply-text" id="replyText"></p>
+      <div class="reply-meta">
+        <span class="reply-code" id="replyCode">NO-SIGNAL</span>
+      </div>
+      <div class="reply-actions">
+        <button class="reply-close-btn" type="button" id="replyCloseBtn">收下这条回信</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Supabase 配置 ── 【请替换为你自己的 Project URL 和 anon key】
     const SUPABASE_URL  = 'https://iuwnwvdopkroranxwgqn.supabase.co';
@@ -843,6 +923,13 @@
     const calDayTitle     = document.querySelector('#calDayTitle');
     const calDayList      = document.querySelector('#calDayList');
     const calBackBtn      = document.querySelector('#calBackBtn');
+    const replyOverlay    = document.querySelector('#replyOverlay');
+    const replyModal      = document.querySelector('#replyModal');
+    const replyRoleIcon   = document.querySelector('#replyRoleIcon');
+    const replyRoleName   = document.querySelector('#replyRoleName');
+    const replyText       = document.querySelector('#replyText');
+    const replyCode       = document.querySelector('#replyCode');
+    const replyCloseBtn   = document.querySelector('#replyCloseBtn');
     const tbEraLabel      = document.querySelector('#tbEraLabel');
     const tbEraDesc       = document.querySelector('#tbEraDesc');
     const tbRisk          = document.querySelector('#tbRisk');
@@ -1298,6 +1385,46 @@
     calendarOverlay.addEventListener('click', e => { if (e.target === calendarOverlay) closeCalendar(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && calendarOverlay.classList.contains('show')) closeCalendar(); });
 
+    // ── 三体回信弹窗（发射高光展示 + 打字机效果） ──
+    const ROLE_META = {
+      '三体客服': { icon: '📡', cls: '' },
+      '罗辑':     { icon: '🚬', cls: 'role-luoji' },
+      '智子':     { icon: '👁', cls: 'role-zhizi' },
+    };
+    let replyTypeTimer = 0;
+    function typewriter(el, text, speed) {
+      clearInterval(replyTypeTimer);
+      el.textContent = '';
+      el.classList.add('typing');
+      let i = 0;
+      replyTypeTimer = setInterval(() => {
+        el.textContent = text.slice(0, ++i);
+        if (i >= text.length) { clearInterval(replyTypeTimer); el.classList.remove('typing'); }
+      }, speed);
+    }
+    // role 传 null 表示静态文案（无 AI 角色）；failed=true 用失败红色主题
+    function showReplyModal(text, role, code, failed) {
+      const meta = ROLE_META[role] || { icon: '📡', cls: '' };
+      const roleName = role || (failed ? '信号残响' : '三体广播中心');
+      const themeCls = failed ? 'role-fail' : meta.cls;
+      replyModal.className = 'reply-modal' + (themeCls ? ' ' + themeCls : '');
+      replyRoleIcon.textContent = meta.icon;
+      replyRoleName.textContent = '来自 ' + roleName + ' 的回信';
+      replyCode.textContent = code || '';
+      replyOverlay.classList.add('show');
+      replyOverlay.setAttribute('aria-hidden', 'false');
+      typewriter(replyText, text, 45);
+    }
+    function closeReplyModal() {
+      clearInterval(replyTypeTimer);
+      replyText.classList.remove('typing');
+      replyOverlay.classList.remove('show');
+      replyOverlay.setAttribute('aria-hidden', 'true');
+    }
+    replyCloseBtn.addEventListener('click', closeReplyModal);
+    replyOverlay.addEventListener('click', e => { if (e.target === replyOverlay) closeReplyModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && replyOverlay.classList.contains('show')) closeReplyModal(); });
+
     // ── Audio (Web Audio API) ──
     let audioCtx = null;
     function getAudioCtx() {
@@ -1472,13 +1599,20 @@
       const code = buildReceiptCode();
       // 优先使用 LLM 定制回复；无自定义吐槽 / 调用失败 / 超时时降级到静态文案
       const custom = replyPromise ? await replyPromise : null;
+      let replyBody, replyRole;
       if (custom && custom.reply) {
+        replyBody = custom.reply;
+        replyRole = custom.role;
         receiptText.textContent = custom.reply + '　—— ' + custom.role;
       } else {
         const pool = (era.receipts && era.receipts.length) ? era.receipts.concat(receipts) : receipts;
-        receiptText.textContent = pick(pool) + ' 本次状态：' + currentMood + '。';
+        replyBody = pick(pool);
+        replyRole = null;
+        receiptText.textContent = replyBody + ' 本次状态：' + currentMood + '。';
       }
       receiptCode.textContent = code;
+      // 高光展示：弹出居中的「三体回信」卡片（打字机效果）
+      showReplyModal(replyBody, replyRole, code, false);
       pushActivity(pick(activities));
       pushHistory(code, currentMood, false, era.era);
       showToast('坐标已发射 · 编号 ' + code);
@@ -1506,12 +1640,19 @@
       const code = 'INTERCEPTED-' + buildReceiptCode().split('-')[1];
       // 失败时同样支持 LLM 定制嘲讽（结合失败情境），否则降级到静态失败文案
       const custom = replyPromise ? await replyPromise : null;
+      let replyBody, replyRole;
       if (custom && custom.reply) {
+        replyBody = custom.reply;
+        replyRole = custom.role;
         receiptText.textContent = custom.reply + '　—— ' + custom.role;
       } else {
-        receiptText.textContent = '发射失败：' + era.desc + '，信号在' + era.era + '的干扰中被截断，未能送达三体。建议等天气好转后重试。';
+        replyBody = '发射失败：' + era.desc + '，信号在' + era.era + '的干扰中被截断，未能送达三体。建议等天气好转后重试。';
+        replyRole = null;
+        receiptText.textContent = replyBody;
       }
       receiptCode.textContent = code;
+      // 高光展示：弹出居中的「三体回信」卡片（失败红色主题）
+      showReplyModal(replyBody, replyRole, code, true);
       pushActivity('一次坐标发射被' + era.era + '的干扰吞没，未能送达。');
       pushHistory(code, currentMood, true, era.era);
       showToast('发射失败 · ' + era.era + ' 信号中断');
