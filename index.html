@@ -1155,8 +1155,10 @@
     }
 
     // ── Mood ──
+    let isCustomMood = false; // 是否为用户自定义吐槽（仅此时才请求 LLM 定制回复）
     function setMood(mood) {
       currentMood = mood;
+      isCustomMood = false;
       moodButtons.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mood === mood)));
       systemStatus.textContent = '系统状态：' + mood;
     }
@@ -1166,6 +1168,7 @@
       const val = customMoodInput.value.trim();
       if (!val) return showToast('请先输入你的精神状态~');
       currentMood = val;
+      isCustomMood = true;
       moodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
       systemStatus.textContent = '系统状态：' + val;
       showToast('已设定状态：' + val);
@@ -1387,6 +1390,19 @@
       setTimeout(() => document.body.classList.remove('shaking'), 360);
     }
 
+    // ── LLM 定制回复（三体客服 / 罗辑 / 智子）──
+    // 调用 Supabase Edge Function 代理，内部再请求 GLM。
+    // 永不 reject：失败/超时一律返回 null，交由调用方降级到静态文案。
+    async function fetchThreeBodyReply(payload) {
+      if (!supabaseClient) return null;
+      const timeout = new Promise(resolve => setTimeout(() => resolve(null), 8000));
+      const call = supabaseClient.functions
+        .invoke('three-body-reply', { body: payload })
+        .then(({ data, error }) => (error || !data || !data.reply) ? null : data)
+        .catch(() => null);
+      return Promise.race([call, timeout]);
+    }
+
     // ── Launch ──
     async function launch() {
       if (isLaunching) return;
@@ -1401,6 +1417,17 @@
 
       const era = currentEra || eraStates[0];
       const willFail = Math.random() < era.failRate;
+
+      // 仅在「自定义吐槽」时，并行请求三体客服的 LLM 定制回复；发射动画负责掩盖其延迟
+      let replyPromise = null;
+      if (isCustomMood) {
+        replyPromise = fetchThreeBodyReply({
+          mood: currentMood,
+          weather: era.era,
+          weatherDesc: era.desc,
+          success: !willFail
+        });
+      }
 
       const steps = [...logStepTemplates];
       steps[3] = '检测今日精神状态：' + currentMood;
@@ -1428,7 +1455,7 @@
       }
 
       if (willFail) {
-        await failLaunch(era);
+        await failLaunch(era, replyPromise);
         return;
       }
 
@@ -1442,10 +1469,15 @@
       // 全网计数 +1（异步，不阻塞动画）
       incrementGlobalCount();
 
-      const pool = (era.receipts && era.receipts.length) ? era.receipts.concat(receipts) : receipts;
-      const receipt = pick(pool);
       const code = buildReceiptCode();
-      receiptText.textContent = receipt + ' 本次状态：' + currentMood + '。';
+      // 优先使用 LLM 定制回复；无自定义吐槽 / 调用失败 / 超时时降级到静态文案
+      const custom = replyPromise ? await replyPromise : null;
+      if (custom && custom.reply) {
+        receiptText.textContent = custom.reply + '　—— ' + custom.role;
+      } else {
+        const pool = (era.receipts && era.receipts.length) ? era.receipts.concat(receipts) : receipts;
+        receiptText.textContent = pick(pool) + ' 本次状态：' + currentMood + '。';
+      }
       receiptCode.textContent = code;
       pushActivity(pick(activities));
       pushHistory(code, currentMood, false, era.era);
@@ -1460,7 +1492,7 @@
     }
 
     // ── Launch failure (三体天气导致的发射失败) ──
-    async function failLaunch(era) {
+    async function failLaunch(era, replyPromise) {
       const failLine = document.createElement('p');
       failLine.textContent = '[ERR!] 信号中断 · ' + era.era + ' 干扰过强，链路已断开';
       failLine.classList.add('log-glitch');
@@ -1472,7 +1504,13 @@
 
       sessionCount++;
       const code = 'INTERCEPTED-' + buildReceiptCode().split('-')[1];
-      receiptText.textContent = '发射失败：' + era.desc + '，信号在' + era.era + '的干扰中被截断，未能送达三体。建议等天气好转后重试。';
+      // 失败时同样支持 LLM 定制嘲讽（结合失败情境），否则降级到静态失败文案
+      const custom = replyPromise ? await replyPromise : null;
+      if (custom && custom.reply) {
+        receiptText.textContent = custom.reply + '　—— ' + custom.role;
+      } else {
+        receiptText.textContent = '发射失败：' + era.desc + '，信号在' + era.era + '的干扰中被截断，未能送达三体。建议等天气好转后重试。';
+      }
       receiptCode.textContent = code;
       pushActivity('一次坐标发射被' + era.era + '的干扰吞没，未能送达。');
       pushHistory(code, currentMood, true, era.era);
