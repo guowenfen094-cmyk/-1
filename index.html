@@ -119,7 +119,7 @@
       display: grid;
       grid-template-columns: minmax(260px, 0.9fr) minmax(300px, 1.05fr);
       gap: clamp(18px, 3vw, 36px);
-      align-items: start;
+      align-items: stretch;
       padding: clamp(20px, 3vw, 36px);
     }
     .hero-text { display: flex; flex-direction: column; gap: 0; }
@@ -252,7 +252,7 @@
     .abort:hover { border-color: rgba(91,215,246,0.3); background: rgba(91,215,246,0.06); color: var(--cyan); }
 
     /* Visual / Radar */
-    .visual { min-height: 420px; position: relative; display: grid; place-items: center; align-self: center; }
+    .visual { min-height: 420px; position: relative; display: grid; place-items: center; align-self: stretch; align-content: center; }
     .radar {
       width: min(84vw, 400px); aspect-ratio: 1;
       position: relative; border-radius: 50%;
@@ -338,6 +338,7 @@
       grid-template-rows: auto auto minmax(160px, 1fr) auto auto;
       gap: 16px;
       min-height: calc(100vh - clamp(28px, 5vw, 56px));
+      align-content: start;
     }
 
     /* Three-body weather */
@@ -494,31 +495,105 @@
     }
     .launch-failed .radar { animation: failFlash 0.6s ease; }
 
-    /* Calendar modal */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 20;
-      background: rgba(4,6,7,0.72); backdrop-filter: blur(4px);
-      display: flex; align-items: center; justify-content: center; padding: 20px;
-      opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+    /* ── 侧抽屉 ── */
+    .drawer-backdrop {
+      position: fixed; inset: 0; z-index: 40;
+      background: rgba(4,6,7,0.6); backdrop-filter: blur(3px);
+      opacity: 0; pointer-events: none;
+      transition: opacity 260ms ease;
     }
-    .modal-overlay.show { opacity: 1; pointer-events: auto; }
-    .calendar-modal {
-      width: min(92vw, 480px); max-height: 86vh; overflow-y: auto;
-      background: var(--panel-solid); border: 1px solid var(--line); border-radius: var(--radius);
-      box-shadow: var(--shadow); padding: 16px 18px 20px;
-      transform: translateY(12px); transition: transform 200ms ease;
+    .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
+      width: min(92vw, 480px);
+      background: linear-gradient(180deg, rgba(12,16,14,0.98) 0%, rgba(8,11,10,0.99) 100%);
+      border-left: 1px solid rgba(225,238,222,0.12);
+      box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 320ms cubic-bezier(0.32, 0.72, 0, 1);
     }
-    .modal-overlay.show .calendar-modal { transform: translateY(0); }
-    .modal-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .drawer.show { transform: translateX(0); }
+
+    /* 抽屉顶栏 */
+    .drawer-header {
+      display: flex; align-items: center; gap: 0;
+      padding: 0 6px 0 18px;
+      border-bottom: 1px solid rgba(225,238,222,0.1);
+      flex: 0 0 auto;
+    }
+    .drawer-title {
+      font-size: 14px; font-weight: 600; color: var(--muted);
+      letter-spacing: -0.01em; flex: 1;
+    }
+    /* Tab 切换 */
+    .drawer-tabs {
+      display: flex; gap: 0; flex: 0 0 auto;
+    }
+    .drawer-tab {
+      min-height: 48px; padding: 0 16px;
+      border: none; border-bottom: 2px solid transparent;
+      background: transparent; color: var(--muted);
+      cursor: pointer; font: inherit; font-size: 13px;
+      transition: all 160ms; white-space: nowrap;
+    }
+    .drawer-tab:hover { color: var(--text); }
+    .drawer-tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+    .drawer-close {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(237,247,236,0.12);
+      background: rgba(255,255,255,0.04); color: var(--muted);
+      cursor: pointer; font-size: 16px; margin-left: 6px;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      transition: all 160ms;
+    }
+    .drawer-close:hover { border-color: rgba(255,77,77,0.4); color: var(--red); background: rgba(255,77,77,0.08); }
+
+    /* 抽屉内容区 */
+    .drawer-body {
+      flex: 1; overflow-y: auto; padding: 18px;
+      scrollbar-width: thin; scrollbar-color: rgba(225,238,222,0.12) transparent;
+    }
+    .drawer-body::-webkit-scrollbar { width: 4px; }
+    .drawer-body::-webkit-scrollbar-thumb { background: rgba(225,238,222,0.15); border-radius: 2px; }
+
+    /* Tab 面板 */
+    .drawer-panel { display: none; }
+    .drawer-panel.active { display: block; }
+
+    /* 侧边栏入口按钮 */
+    .drawer-entry-btn {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; min-height: 40px; padding: 0 14px;
+      border: 1px solid rgba(91,215,246,0.22); border-radius: var(--radius);
+      background: rgba(91,215,246,0.05); color: var(--cyan);
+      cursor: pointer; font: inherit; font-size: 13px;
+      transition: all 160ms; justify-content: center;
+    }
+    .drawer-entry-btn:hover { background: rgba(91,215,246,0.12); border-color: rgba(91,215,246,0.4); }
+    .drawer-entry-btn .btn-badge {
+      font-size: 11px; color: var(--amber); font-family: ui-monospace, monospace;
+      padding: 1px 6px; border-radius: 999px;
+      background: rgba(246,195,91,0.12); border: 1px solid rgba(246,195,91,0.25);
+    }
+
+    /* 日历相关（抽屉内复用） */
+    .modal-close {
+      width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04); color: var(--muted); cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      transition: all 160ms;
+    }
+    .modal-close:hover { border-color: rgba(91,215,246,0.4); color: var(--cyan); }
     .cal-month-label { flex: 1; margin: 0; text-align: center; font-size: 16px; letter-spacing: -0.01em; }
-    .cal-nav, .modal-close {
+    .cal-nav {
       width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line);
       background: rgba(255,255,255,0.04); color: var(--text); cursor: pointer; font-size: 15px;
       display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
       transition: all 160ms;
     }
-    .cal-nav:hover, .modal-close:hover { border-color: rgba(91,215,246,0.4); color: var(--cyan); }
-    .modal-close { color: var(--muted); }
+    .cal-nav:hover { border-color: rgba(91,215,246,0.4); color: var(--cyan); }
+    .drawer-cal-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
     .cal-summary {
       font-size: 12px; color: var(--muted); text-align: center; margin: 0 0 12px;
       padding-bottom: 10px; border-bottom: 1px dashed rgba(237,247,236,0.1);
@@ -570,6 +645,282 @@
     .cal-day-item.failed .cdi-status { color: var(--red); }
     .cdi-mood { grid-column: 1 / -1; color: #e8f4f0; }
     .cdi-code { grid-column: 1 / -1; font-family: ui-monospace, monospace; color: var(--amber); font-size: 10px; }
+
+    /* 发射确认弹窗 */
+    .confirm-overlay {
+      position: fixed; inset: 0; z-index: 25;
+      background: rgba(4,6,7,0.78); backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 220ms ease;
+    }
+    .confirm-overlay.show { opacity: 1; pointer-events: auto; }
+    .confirm-modal {
+      width: min(92vw, 500px);
+      background: linear-gradient(160deg, rgba(18,24,26,0.97), rgba(10,14,15,0.99));
+      border: 1px solid rgba(91,215,246,0.28);
+      border-radius: 16px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.65), 0 0 60px rgba(91,215,246,0.08);
+      padding: 28px 28px 24px;
+      transform: translateY(16px) scale(0.97); opacity: 0;
+      transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), opacity 240ms ease;
+    }
+    .confirm-overlay.show .confirm-modal { transform: translateY(0) scale(1); opacity: 1; }
+
+    .confirm-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+    }
+    .confirm-icon {
+      width: 40px; height: 40px; border-radius: 50%; flex: 0 0 auto;
+      border: 1.5px solid rgba(91,215,246,0.5);
+      background: radial-gradient(circle, rgba(91,215,246,0.15) 0 40%, transparent 41%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; animation: confirmPulse 2s ease-in-out infinite;
+    }
+    @keyframes confirmPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(91,215,246,0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(91,215,246,0); }
+    }
+    .confirm-title { margin: 0; font-size: 17px; letter-spacing: -0.01em; color: var(--text); }
+    .confirm-subtitle { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .confirm-coords {
+      padding: 12px 14px; border-radius: var(--radius);
+      border: 1px solid rgba(91,215,246,0.18);
+      background: rgba(91,215,246,0.04);
+      font-family: ui-monospace, monospace; font-size: 11px; color: var(--cyan);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px;
+      margin-bottom: 14px;
+    }
+    .confirm-coords .cc-label { color: var(--muted); font-size: 10px; margin-bottom: 2px; }
+    .confirm-coords .cc-group { display: flex; flex-direction: column; }
+
+    .confirm-mood-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: var(--radius);
+      border: 1px solid rgba(246,195,91,0.2);
+      background: rgba(246,195,91,0.05);
+      margin-bottom: 12px;
+    }
+    .confirm-mood-label { font-size: 11px; color: var(--muted); flex: 0 0 auto; }
+    .confirm-mood-value { font-size: 14px; color: var(--amber); font-weight: 600; flex: 1; }
+
+    .confirm-risk-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 14px; border-radius: var(--radius);
+      border: 1px solid rgba(237,247,236,0.1);
+      background: rgba(255,255,255,0.02);
+      margin-bottom: 20px; font-size: 12px;
+    }
+    .confirm-risk-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+      background: var(--green); box-shadow: 0 0 6px rgba(88,242,161,0.6);
+      transition: all 300ms;
+    }
+    .confirm-risk-dot.risky { background: var(--amber); box-shadow: 0 0 6px rgba(246,195,91,0.6); }
+    .confirm-risk-dot.danger { background: var(--red); box-shadow: 0 0 6px rgba(255,77,77,0.6); animation: dangerBlink 0.8s step-end infinite; }
+    @keyframes dangerBlink { 50% { opacity: 0.2; } }
+    .confirm-risk-text { color: var(--muted); flex: 1; }
+    .confirm-risk-text strong { color: var(--text); }
+
+    .confirm-actions { display: flex; gap: 10px; }
+    .confirm-cancel-btn {
+      flex: 1; min-height: 46px; border: 1px solid rgba(237,247,236,0.14);
+      border-radius: var(--radius); background: rgba(255,255,255,0.04);
+      color: #ccd8d2; cursor: pointer; font-size: 14px; font: inherit;
+      transition: all 160ms;
+    }
+    .confirm-cancel-btn:hover { border-color: rgba(91,215,246,0.3); background: rgba(91,215,246,0.06); color: var(--cyan); }
+    .confirm-launch-btn {
+      flex: 2; min-height: 46px; border: 0; border-radius: var(--radius);
+      cursor: pointer; font-size: 15px; font-weight: 700; font: inherit; font-weight: 700;
+      color: #fff; letter-spacing: -0.01em;
+      background: linear-gradient(180deg, rgba(255,255,255,0.14), transparent 42%),
+                  linear-gradient(135deg, var(--red), var(--red-dark));
+      box-shadow: 0 8px 28px rgba(255,77,77,0.28), inset 0 -2px 0 rgba(0,0,0,0.25);
+      transition: all 150ms;
+    }
+    .confirm-launch-btn:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 12px 36px rgba(255,77,77,0.38), inset 0 -2px 0 rgba(0,0,0,0.25); }
+    .confirm-launch-btn:active { transform: translateY(1px); }
+
+    /* 倒计时覆盖层 */
+    .countdown-overlay {
+      position: fixed; inset: 0; z-index: 28;
+      background: rgba(4,6,7,0.88); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+      opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+    }
+    .countdown-overlay.show { opacity: 1; pointer-events: auto; }
+    .countdown-label {
+      font-size: 13px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase;
+    }
+    .countdown-number {
+      font-family: ui-monospace, monospace;
+      font-size: clamp(80px, 18vw, 140px);
+      line-height: 1; font-weight: 900; letter-spacing: -0.04em;
+      color: var(--red);
+      text-shadow: 0 0 60px rgba(255,77,77,0.5), 0 0 120px rgba(255,77,77,0.2);
+      transition: transform 120ms ease, opacity 120ms ease;
+    }
+    .countdown-number.tick { transform: scale(1.12); }
+    .countdown-number.go {
+      color: var(--green);
+      text-shadow: 0 0 60px rgba(88,242,161,0.6), 0 0 120px rgba(88,242,161,0.25);
+    }
+    .countdown-coord {
+      font-family: ui-monospace, monospace; font-size: 12px; color: rgba(91,215,246,0.6);
+      letter-spacing: 0.06em; text-align: center; line-height: 1.8;
+    }
+    .countdown-abort-btn {
+      min-height: 40px; padding: 0 24px;
+      border: 1px solid rgba(237,247,236,0.18); border-radius: 999px;
+      background: rgba(255,255,255,0.04); color: #ccd8d2;
+      cursor: pointer; font-size: 13px; font: inherit;
+      transition: all 160ms;
+    }
+    .countdown-abort-btn:hover { border-color: rgba(255,77,77,0.4); background: rgba(255,77,77,0.08); color: var(--red); }
+
+    /* ── 成就系统 ── */
+
+    /* 成就墙弹窗 */
+    .ach-wall-modal {
+      width: min(92vw, 520px); max-height: 86vh; overflow-y: auto;
+      background: var(--panel-solid); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 16px 18px 20px;
+      transform: translateY(12px); transition: transform 200ms ease;
+    }
+    .modal-overlay.show .ach-wall-modal { transform: translateY(0); }
+
+    .achievement-count {
+      font-size: 11px; color: var(--muted);
+      padding: 3px 9px; border-radius: 999px;
+      border: 1px solid rgba(237,247,236,0.12);
+      background: rgba(255,255,255,0.03);
+      font-family: ui-monospace, monospace;
+    }
+    .achievement-count .ach-unlocked { color: var(--amber); }
+
+    .achievement-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .ach-card {
+      aspect-ratio: 1; border-radius: var(--radius);
+      border: 1px solid rgba(237,247,236,0.09);
+      background: rgba(255,255,255,0.02);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      cursor: default; position: relative; overflow: hidden;
+      transition: all 200ms ease;
+    }
+    .ach-card.unlocked {
+      border-color: rgba(246,195,91,0.35);
+      background: rgba(246,195,91,0.06);
+      cursor: pointer;
+    }
+    .ach-card.unlocked:hover {
+      border-color: rgba(246,195,91,0.6);
+      background: rgba(246,195,91,0.12);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(246,195,91,0.12);
+    }
+    .ach-card.hidden-locked {
+      border-color: rgba(237,247,236,0.06);
+      background: rgba(255,255,255,0.01);
+    }
+    .ach-emoji {
+      font-size: 22px; line-height: 1;
+      filter: grayscale(1) opacity(0.25);
+      transition: filter 300ms;
+    }
+    .ach-card.unlocked .ach-emoji { filter: none; }
+    .ach-card.hidden-locked .ach-emoji { filter: grayscale(1) opacity(0.08); }
+    .ach-name {
+      font-size: 9px; color: var(--muted); text-align: center;
+      line-height: 1.3; padding: 0 4px;
+      transition: color 300ms;
+    }
+    .ach-card.unlocked .ach-name { color: var(--amber); }
+    .ach-card.hidden-locked .ach-name { color: rgba(138,160,154,0.3); }
+
+    /* 新解锁闪光效果 */
+    .ach-card.just-unlocked::after {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle, rgba(246,195,91,0.5) 0%, transparent 70%);
+      animation: achFlash 0.6s ease-out forwards;
+    }
+    @keyframes achFlash {
+      0% { opacity: 1; transform: scale(0.5); }
+      100% { opacity: 0; transform: scale(2); }
+    }
+
+    /* 成就解锁弹窗通知（右下角浮出） */
+    .ach-toast {
+      position: fixed; right: 20px; bottom: 36px; z-index: 50;
+      width: min(calc(100vw - 40px), 340px);
+      background: linear-gradient(135deg, rgba(18,22,16,0.97), rgba(12,16,12,0.99));
+      border: 1px solid rgba(246,195,91,0.45);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(246,195,91,0.12);
+      padding: 16px 18px;
+      transform: translateX(120%); opacity: 0;
+      transition: transform 380ms cubic-bezier(0.34,1.56,0.64,1), opacity 300ms ease;
+      pointer-events: none;
+    }
+    .ach-toast.show { transform: translateX(0); opacity: 1; pointer-events: auto; }
+    .ach-toast-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    }
+    .ach-toast-badge {
+      font-size: 11px; color: var(--amber); letter-spacing: 0.08em;
+      padding: 3px 8px; border-radius: 999px;
+      border: 1px solid rgba(246,195,91,0.4); background: rgba(246,195,91,0.1);
+    }
+    .ach-toast-close {
+      margin-left: auto; width: 22px; height: 22px; border-radius: 50%;
+      border: none; background: rgba(255,255,255,0.06); color: var(--muted);
+      cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;
+      transition: all 140ms;
+    }
+    .ach-toast-close:hover { background: rgba(255,77,77,0.15); color: var(--red); }
+    .ach-toast-body { display: flex; align-items: center; gap: 14px; }
+    .ach-toast-emoji { font-size: 36px; flex: 0 0 auto; }
+    .ach-toast-info { flex: 1; min-width: 0; }
+    .ach-toast-name { font-size: 15px; font-weight: 700; color: var(--amber); margin-bottom: 3px; }
+    .ach-toast-desc { font-size: 12px; color: #b0c8b8; line-height: 1.5; }
+    .ach-toast-flavor { font-size: 11px; color: var(--muted); margin-top: 8px; font-style: italic; }
+
+    /* 成就详情弹窗（点击成就卡片） */
+    .ach-detail-overlay {
+      position: fixed; inset: 0; z-index: 35;
+      background: rgba(4,6,7,0.72); backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+    }
+    .ach-detail-overlay.show { opacity: 1; pointer-events: auto; }
+    .ach-detail-modal {
+      width: min(92vw, 380px);
+      background: linear-gradient(160deg, rgba(20,24,18,0.98), rgba(10,14,10,0.99));
+      border: 1px solid rgba(246,195,91,0.35);
+      border-radius: 16px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.65), 0 0 50px rgba(246,195,91,0.1);
+      padding: 28px 26px 24px; text-align: center;
+      transform: translateY(14px) scale(0.97); opacity: 0;
+      transition: transform 280ms cubic-bezier(0.34,1.56,0.64,1), opacity 240ms ease;
+    }
+    .ach-detail-overlay.show .ach-detail-modal { transform: translateY(0) scale(1); opacity: 1; }
+    .ach-detail-emoji { font-size: 52px; margin-bottom: 14px; display: block; }
+    .ach-detail-name { margin: 0 0 6px; font-size: 20px; color: var(--amber); letter-spacing: -0.01em; }
+    .ach-detail-desc { font-size: 13px; color: #b0c8b8; margin: 0 0 10px; line-height: 1.6; }
+    .ach-detail-flavor {
+      font-size: 12px; color: var(--muted); font-style: italic; margin: 0 0 18px;
+      padding: 10px 14px; border-radius: var(--radius);
+      border: 1px dashed rgba(246,195,91,0.2); background: rgba(246,195,91,0.04);
+    }
+    .ach-detail-time { font-size: 11px; color: var(--muted); margin-bottom: 18px; font-family: ui-monospace, monospace; }
+    .ach-detail-close {
+      min-height: 40px; padding: 0 24px; border: 0; border-radius: 10px; cursor: pointer;
+      font-size: 14px; font-weight: 700; font: inherit; font-weight: 700;
+      color: #06231a;
+      background: linear-gradient(135deg, var(--amber), #d4a030);
+      box-shadow: 0 6px 20px rgba(246,195,91,0.25); transition: all 150ms;
+    }
+    .ach-detail-close:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
     /* 三体回信弹窗（发射后的高光展示） */
     .reply-overlay {
@@ -828,7 +1179,9 @@
       <section class="panel history-section" aria-label="发射历史">
         <div class="history-header">
           <h2>发射历史</h2>
-          <button class="cal-entry-btn" type="button" id="openCalendarBtn">📅 发射日历</button>
+          <button class="drawer-entry-btn" type="button" id="openDrawerBtn" style="width:auto;min-height:32px;padding:0 12px;font-size:12px;">
+            📂 日历 &amp; 勋章 <span class="btn-badge" id="achUnlockedCount">0</span>
+          </button>
         </div>
         <div class="history-list" id="historyList">
           <div style="font-size:12px;color:var(--muted);">暂无发射记录</div>
@@ -847,35 +1200,143 @@
   <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <!-- Calendar Modal -->
-  <div class="modal-overlay" id="calendarOverlay" aria-hidden="true">
-    <div class="modal calendar-modal" role="dialog" aria-modal="true" aria-label="发射日历">
-      <div class="modal-header">
-        <button class="cal-nav" type="button" id="calPrevBtn" aria-label="上个月">‹</button>
-        <h3 class="cal-month-label" id="calMonthLabel">2026 年 7 月</h3>
-        <button class="cal-nav" type="button" id="calNextBtn" aria-label="下个月">›</button>
-        <button class="modal-close" type="button" id="calCloseBtn" aria-label="关闭日历">✕</button>
+  <!-- 侧抽屉（日历 + 勋章墙） -->
+  <div class="drawer-backdrop" id="drawerBackdrop" aria-hidden="true"></div>
+  <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="日历与勋章">
+    <div class="drawer-header">
+      <div class="drawer-tabs">
+        <button class="drawer-tab active" type="button" data-tab="calendar">📅 发射日历</button>
+        <button class="drawer-tab" type="button" data-tab="achievements">🏅 勋章墙</button>
+      </div>
+      <button class="drawer-close" type="button" id="drawerCloseBtn" aria-label="关闭">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- 日历 Tab -->
+      <div class="drawer-panel active" id="drawerPanelCalendar">
+        <div class="drawer-cal-header">
+          <button class="cal-nav" type="button" id="calPrevBtn" aria-label="上个月">‹</button>
+          <h3 class="cal-month-label" id="calMonthLabel">2026 年 7 月</h3>
+          <button class="cal-nav" type="button" id="calNextBtn" aria-label="下个月">›</button>
+        </div>
+
+        <p class="cal-summary" id="calSummary">本月暂无发射记录，宇宙很安静。</p>
+
+        <div class="cal-body" id="calMonthView">
+          <div class="cal-weekdays">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-legend">
+            <span><i class="dot-success"></i>成功</span>
+            <span><i class="dot-fail"></i>失败</span>
+          </div>
+        </div>
+
+        <div class="cal-day-detail" id="calDayDetail" hidden>
+          <button class="cal-back-btn" type="button" id="calBackBtn">‹ 返回月历</button>
+          <h4 class="cal-day-title" id="calDayTitle"></h4>
+          <div class="cal-day-list" id="calDayList"></div>
+        </div>
       </div>
 
-      <p class="cal-summary" id="calSummary">本月暂无发射记录，宇宙很安静。</p>
-
-      <div class="cal-body" id="calMonthView">
-        <div class="cal-weekdays">
-          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      <!-- 勋章墙 Tab -->
+      <div class="drawer-panel" id="drawerPanelAch">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <span style="font-size:13px;color:var(--muted);">点击已解锁的勋章查看详情</span>
+          <span class="achievement-count"><span class="ach-unlocked" id="achUnlockedCount2">0</span> / 13 已解锁</span>
         </div>
-        <div class="cal-grid" id="calGrid"></div>
-        <div class="cal-legend">
-          <span><i class="dot-success"></i>成功</span>
-          <span><i class="dot-fail"></i>失败</span>
-        </div>
-      </div>
-
-      <div class="cal-day-detail" id="calDayDetail" hidden>
-        <button class="cal-back-btn" type="button" id="calBackBtn">‹ 返回月历</button>
-        <h4 class="cal-day-title" id="calDayTitle"></h4>
-        <div class="cal-day-list" id="calDayList"></div>
+        <div class="achievement-grid" id="achievementGrid"></div>
       </div>
     </div>
+  </div>
+
+  <!-- 成就解锁通知（右下角浮出） -->
+  <div class="ach-toast" id="achToast" aria-live="assertive" aria-atomic="true">
+    <div class="ach-toast-header">
+      <span class="ach-toast-badge">🏅 成就解锁</span>
+      <button class="ach-toast-close" type="button" id="achToastClose" aria-label="关闭">✕</button>
+    </div>
+    <div class="ach-toast-body">
+      <span class="ach-toast-emoji" id="achToastEmoji">🔴</span>
+      <div class="ach-toast-info">
+        <div class="ach-toast-name" id="achToastName">初次广播</div>
+        <div class="ach-toast-desc" id="achToastDesc">完成第一次坐标发射</div>
+      </div>
+    </div>
+    <div class="ach-toast-flavor" id="achToastFlavor">智子已将此成就记录在案。</div>
+  </div>
+
+
+
+  <!-- 成就详情弹窗（点击成就卡片） -->
+  <div class="ach-detail-overlay" id="achDetailOverlay" aria-hidden="true">
+    <div class="ach-detail-modal" role="dialog" aria-modal="true" aria-label="成就详情">
+      <span class="ach-detail-emoji" id="achDetailEmoji">🔴</span>
+      <h3 class="ach-detail-name" id="achDetailName">初次广播</h3>
+      <p class="ach-detail-desc" id="achDetailDesc">完成第一次坐标发射</p>
+      <p class="ach-detail-flavor" id="achDetailFlavor">智子已将此成就记录在案。</p>
+      <div class="ach-detail-time" id="achDetailTime"></div>
+      <button class="ach-detail-close" type="button" id="achDetailClose">收下</button>
+    </div>
+  </div>
+
+  <!-- 发射确认弹窗 -->
+  <div class="confirm-overlay" id="confirmOverlay" aria-hidden="true">
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-label="发射确认">
+      <div class="confirm-header">
+        <div class="confirm-icon" aria-hidden="true">📡</div>
+        <div>
+          <h3 class="confirm-title">广播前最后确认</h3>
+          <div class="confirm-subtitle">此操作将向 4.22 光年外广播地球坐标（物理意义上不可撤销）</div>
+        </div>
+      </div>
+
+      <div class="confirm-coords" aria-label="发射坐标">
+        <div class="cc-group">
+          <div class="cc-label">银河系赤经</div>
+          <div class="cc-value" id="confirmRA">17h 45m 40.0000s</div>
+        </div>
+        <div class="cc-group">
+          <div class="cc-label">银河系赤纬</div>
+          <div class="cc-value">−29° 00′ 28″</div>
+        </div>
+        <div class="cc-group">
+          <div class="cc-label">距银心距离</div>
+          <div class="cc-value">26,000 光年</div>
+        </div>
+        <div class="cc-group">
+          <div class="cc-label">信号延迟</div>
+          <div class="cc-value" id="confirmDelay">4.2200 光年</div>
+        </div>
+      </div>
+
+      <div class="confirm-mood-row">
+        <span class="confirm-mood-label">当前精神状态</span>
+        <span class="confirm-mood-value" id="confirmMood">被工作夺舍</span>
+      </div>
+
+      <div class="confirm-risk-row">
+        <div class="confirm-risk-dot" id="confirmRiskDot"></div>
+        <div class="confirm-risk-text" id="confirmRiskText">标准恒纪元 · 发射成功率 100%</div>
+      </div>
+
+      <div class="confirm-actions">
+        <button class="confirm-cancel-btn" type="button" id="confirmCancelBtn">再想想</button>
+        <button class="confirm-launch-btn" type="button" id="confirmLaunchBtn">确认发射 →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 发射倒计时覆盖层 -->
+  <div class="countdown-overlay" id="countdownOverlay" aria-hidden="true" aria-live="assertive">
+    <div class="countdown-label">广播倒计时</div>
+    <div class="countdown-number" id="countdownNumber">3</div>
+    <div class="countdown-coord" id="countdownCoord">
+      RA 17h 45m 40.0000s · Dec −29° 00′ 28″<br>
+      精神状态：被工作夺舍
+    </div>
+    <button class="countdown-abort-btn" type="button" id="countdownAbortBtn">中止广播</button>
   </div>
 
   <!-- 三体回信弹窗（发射后的高光展示） -->
@@ -911,6 +1372,7 @@
     const HISTORY_KEY = 'earth-coord-v2-history'; // 旧版仅存最近5条，保留用于一次性迁移
     const FULL_LOG_KEY = 'earth-coord-v2-full-log'; // 新版：完整发射记录，供日历查询
     const MAX_HISTORY_DISPLAY = 5; // 侧边栏「发射历史」只展示最近 N 条，完整记录在日历里看
+    const ACH_KEY = 'earth-coord-v2-achievements'; // 成就解锁记录
 
     // ── DOM refs ──
     const launchButton    = document.querySelector('#launchButton');
@@ -932,9 +1394,15 @@
     const customMoodBtn   = document.querySelector('#customMoodBtn');
     const customMoodList  = document.querySelector('#customMoodList');
     const historyList     = document.querySelector('#historyList');
-    const openCalendarBtn = document.querySelector('#openCalendarBtn');
-    const calendarOverlay = document.querySelector('#calendarOverlay');
-    const calCloseBtn     = document.querySelector('#calCloseBtn');
+    // 侧抽屉
+    const drawer            = document.querySelector('#drawer');
+    const drawerBackdrop    = document.querySelector('#drawerBackdrop');
+    const drawerCloseBtn    = document.querySelector('#drawerCloseBtn');
+    const drawerTabs        = [...document.querySelectorAll('.drawer-tab')];
+    const drawerPanelCal    = document.querySelector('#drawerPanelCalendar');
+    const drawerPanelAch    = document.querySelector('#drawerPanelAch');
+    const openDrawerBtn     = document.querySelector('#openDrawerBtn');
+    // 日历
     const calPrevBtn      = document.querySelector('#calPrevBtn');
     const calNextBtn      = document.querySelector('#calNextBtn');
     const calMonthLabel   = document.querySelector('#calMonthLabel');
@@ -945,6 +1413,35 @@
     const calDayTitle     = document.querySelector('#calDayTitle');
     const calDayList      = document.querySelector('#calDayList');
     const calBackBtn      = document.querySelector('#calBackBtn');
+    // 成就
+    const achToast          = document.querySelector('#achToast');
+    const achToastClose     = document.querySelector('#achToastClose');
+    const achToastEmoji     = document.querySelector('#achToastEmoji');
+    const achToastName      = document.querySelector('#achToastName');
+    const achToastDesc      = document.querySelector('#achToastDesc');
+    const achToastFlavor    = document.querySelector('#achToastFlavor');
+    const achDetailOverlay  = document.querySelector('#achDetailOverlay');
+    const achDetailEmoji    = document.querySelector('#achDetailEmoji');
+    const achDetailName     = document.querySelector('#achDetailName');
+    const achDetailDesc     = document.querySelector('#achDetailDesc');
+    const achDetailFlavor   = document.querySelector('#achDetailFlavor');
+    const achDetailTime     = document.querySelector('#achDetailTime');
+    const achDetailClose    = document.querySelector('#achDetailClose');
+    const achievementGrid   = document.querySelector('#achievementGrid');
+    const achUnlockedCount  = document.querySelector('#achUnlockedCount');   // 侧边栏按钮里的计数
+    const achUnlockedCount2 = document.querySelector('#achUnlockedCount2');  // 抽屉里的计数
+    const confirmOverlay    = document.querySelector('#confirmOverlay');
+    const confirmCancelBtn  = document.querySelector('#confirmCancelBtn');
+    const confirmLaunchBtn  = document.querySelector('#confirmLaunchBtn');
+    const confirmMood       = document.querySelector('#confirmMood');
+    const confirmRiskDot    = document.querySelector('#confirmRiskDot');
+    const confirmRiskText   = document.querySelector('#confirmRiskText');
+    const confirmRA         = document.querySelector('#confirmRA');
+    const confirmDelay      = document.querySelector('#confirmDelay');
+    const countdownOverlay  = document.querySelector('#countdownOverlay');
+    const countdownNumber   = document.querySelector('#countdownNumber');
+    const countdownCoord    = document.querySelector('#countdownCoord');
+    const countdownAbortBtn = document.querySelector('#countdownAbortBtn');
     const replyOverlay    = document.querySelector('#replyOverlay');
     const replyModal      = document.querySelector('#replyModal');
     const replyRoleIcon   = document.querySelector('#replyRoleIcon');
@@ -1132,9 +1629,14 @@
       const drift = Math.sin(ms / 18000) * 0.0002;
       const raSec = (40.0 + drift).toFixed(4);
       const delay = (4.2200 + Math.sin(ms / 25000) * 0.002).toFixed(4);
-      document.querySelector('#cRA').textContent   = '17h 45m ' + raSec + 's';
-      document.querySelector('#cDelay').textContent = delay + ' 光年';
-      coordLive.textContent = 'RA 17h 45m ' + raSec + 's · Dec −29° 00′ 28″';
+      const raStr = '17h 45m ' + raSec + 's';
+      const delayStr = delay + ' 光年';
+      document.querySelector('#cRA').textContent   = raStr;
+      document.querySelector('#cDelay').textContent = delayStr;
+      coordLive.textContent = 'RA ' + raStr + ' · Dec −29° 00′ 28″';
+      // 同步更新确认弹窗和倒计时里的坐标
+      confirmRA.textContent    = raStr;
+      confirmDelay.textContent = delayStr;
     }
     setInterval(updateCoords, 2000);
     updateCoords();
@@ -1355,26 +1857,53 @@
       });
       localStorage.setItem(FULL_LOG_KEY, JSON.stringify(fullLaunchLog));
       renderHistory();
-      if (calendarOverlay.classList.contains('show')) renderCalendarMonth();
+      if (drawer.classList.contains('show') && currentDrawerTab === 'calendar') renderCalendarMonth();
     }
     renderHistory();
 
     // ── Calendar ──
     let calViewYear, calViewMonth; // calViewMonth: 0-11
 
-    function openCalendar() {
-      const now = new Date();
-      calViewYear = now.getFullYear();
-      calViewMonth = now.getMonth();
-      showDayDetail(null);
-      renderCalendarMonth();
-      calendarOverlay.classList.add('show');
-      calendarOverlay.setAttribute('aria-hidden', 'false');
+    // ── 侧抽屉开关 & Tab 切换 ──
+    let currentDrawerTab = 'calendar';
+
+    function openDrawer(tab) {
+      currentDrawerTab = tab || 'calendar';
+      // 切换 Tab 激活状态
+      drawerTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === currentDrawerTab));
+      drawerPanelCal.classList.toggle('active', currentDrawerTab === 'calendar');
+      drawerPanelAch.classList.toggle('active', currentDrawerTab === 'achievements');
+      // 日历 Tab 打开时刷新
+      if (currentDrawerTab === 'calendar') {
+        const now = new Date();
+        calViewYear = now.getFullYear();
+        calViewMonth = now.getMonth();
+        showDayDetail(null);
+        renderCalendarMonth();
+      }
+      // 成就 Tab 打开时刷新
+      if (currentDrawerTab === 'achievements') renderAchievementGrid();
+      drawer.classList.add('show');
+      drawerBackdrop.classList.add('show');
+      drawer.setAttribute('aria-hidden', 'false');
+      drawerBackdrop.setAttribute('aria-hidden', 'false');
     }
-    function closeCalendar() {
-      calendarOverlay.classList.remove('show');
-      calendarOverlay.setAttribute('aria-hidden', 'true');
+    function closeDrawer() {
+      drawer.classList.remove('show');
+      drawerBackdrop.classList.remove('show');
+      drawer.setAttribute('aria-hidden', 'true');
+      drawerBackdrop.setAttribute('aria-hidden', 'true');
     }
+    // Tab 点击切换
+    drawerTabs.forEach(btn => btn.addEventListener('click', () => openDrawer(btn.dataset.tab)));
+    drawerCloseBtn.addEventListener('click', closeDrawer);
+    drawerBackdrop.addEventListener('click', closeDrawer);
+    if (openDrawerBtn) openDrawerBtn.addEventListener('click', () => openDrawer('calendar'));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && drawer.classList.contains('show')) closeDrawer(); });
+
+    // 日历内部逻辑（openCalendar 现在由 openDrawer 调用）
+    function openCalendar() { openDrawer('calendar'); }
+    function closeCalendar() { closeDrawer(); }
     function changeCalMonth(delta) {
       calViewMonth += delta;
       if (calViewMonth < 0) { calViewMonth = 11; calViewYear--; }
@@ -1447,13 +1976,9 @@
       calDayDetail.hidden = false;
     }
 
-    openCalendarBtn.addEventListener('click', openCalendar);
-    calCloseBtn.addEventListener('click', closeCalendar);
     calPrevBtn.addEventListener('click', () => changeCalMonth(-1));
     calNextBtn.addEventListener('click', () => changeCalMonth(1));
     calBackBtn.addEventListener('click', () => showDayDetail(null));
-    calendarOverlay.addEventListener('click', e => { if (e.target === calendarOverlay) closeCalendar(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && calendarOverlay.classList.contains('show')) closeCalendar(); });
 
     // ── 三体回信弹窗（发射高光展示 + 打字机效果） ──
     const ROLE_META = {
@@ -1494,6 +2019,395 @@
     replyCloseBtn.addEventListener('click', closeReplyModal);
     replyOverlay.addEventListener('click', e => { if (e.target === replyOverlay) closeReplyModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && replyOverlay.classList.contains('show')) closeReplyModal(); });
+
+    // ── 成就系统 ──
+    const ACHIEVEMENTS = [
+      {
+        id: 'first_launch',
+        emoji: '🔴', name: '初次广播',
+        desc: '完成第一次坐标发射',
+        flavor: '叶文洁第一次按下按钮时，也是这种感觉。',
+        hidden: false
+      },
+      {
+        id: 'launch_50',
+        emoji: '🟡', name: '三体常客',
+        desc: '累计发射 50 次',
+        flavor: '三体客服已将你列入VIP名单，排队优先级：倒数第一。',
+        hidden: false
+      },
+      {
+        id: 'launch_100',
+        emoji: '🟢', name: '红岸老兵',
+        desc: '累计发射 100 次',
+        flavor: '红岸基地的老员工都没你勤快。',
+        hidden: false
+      },
+      {
+        id: 'launch_300',
+        emoji: '📡', name: '叶文洁传人',
+        desc: '累计发射 300 次',
+        flavor: '智子已专程来地球确认你是否真实存在。',
+        hidden: false
+      },
+      {
+        id: 'sunny_success',
+        emoji: '🔥', name: '烈日勇士',
+        desc: '在「三日凌空」天气下成功发射 1 次',
+        flavor: '地表 400℃，信号依然送达。三体人表示：服了。',
+        hidden: false
+      },
+      {
+        id: 'cold_success_10',
+        emoji: '❄️', name: '极寒信使',
+        desc: '在「多飞星严寒」天气下成功发射 10 次',
+        flavor: '大气都冻住了，你还在发。这份执着令人动容。',
+        hidden: false
+      },
+      {
+        id: 'doomsday_gambler',
+        emoji: '💥', name: '末日赌徒',
+        desc: '在失败率 100% 的天气下尝试发射',
+        flavor: '明知必败仍然出手。黑暗森林里最危险的生物。',
+        hidden: false
+      },
+      {
+        id: 'fail_streak_5',
+        emoji: '😤', name: '屡败屡战',
+        desc: '连续发射失败 5 次',
+        flavor: '三体人：我们没有拦截，是你们自己信号太差。',
+        hidden: false
+      },
+      {
+        id: 'night_owl',
+        emoji: '🌙', name: '深夜广播员',
+        desc: '在凌晨 1:00–5:00 之间发射',
+        flavor: '深夜的坐标带着一种特别的孤独，三体人收到了。',
+        hidden: false
+      },
+      {
+        id: 'abort_countdown',
+        emoji: '🔄', name: '临阵脱逃',
+        desc: '在倒计时中途中止广播',
+        flavor: '撤退也是一种勇气。叶文洁当年没有这个选项。',
+        hidden: false
+      },
+      {
+        id: 'launch_42',
+        emoji: '🎯', name: '第42次',
+        desc: '完成第 42 次发射',
+        flavor: '生命、宇宙及一切的答案，已广播至三体星系。',
+        hidden: false
+      },
+      {
+        id: 'streak_3days',
+        emoji: '📅', name: '连续签到',
+        desc: '连续 3 天都有发射记录',
+        flavor: '三体人已将你的坐标设为每日必读。',
+        hidden: false
+      },
+      {
+        id: 'launch_500',
+        emoji: '🌑', name: '黑暗森林',
+        desc: '累计发射 500 次',
+        flavor: '宇宙就是一座黑暗森林，而你是最亮的那盏灯。',
+        hidden: true  // 隐藏成就，未解锁时显示为 ???
+      }
+    ];
+
+    // 成就状态：{ [id]: { unlockedAt: timestamp } }
+    let achState = {};
+    try { achState = JSON.parse(localStorage.getItem(ACH_KEY) || '{}'); } catch(e) { achState = {}; }
+
+    // 连续失败计数（仅内存，不持久化）
+    let consecutiveFailCount = 0;
+
+    function saveAchState() {
+      localStorage.setItem(ACH_KEY, JSON.stringify(achState));
+    }
+
+    // 解锁成就（若已解锁则跳过）
+    function unlockAchievement(id) {
+      if (achState[id]) return; // 已解锁
+      const def = ACHIEVEMENTS.find(a => a.id === id);
+      if (!def) return;
+      achState[id] = { unlockedAt: Date.now() };
+      saveAchState();
+      renderAchievementGrid();
+      showAchToast(def);
+      // 给对应卡片加闪光
+      const card = achievementGrid.querySelector('[data-ach-id="' + id + '"]');
+      if (card) {
+        card.classList.add('just-unlocked');
+        setTimeout(() => card.classList.remove('just-unlocked'), 700);
+      }
+    }
+
+    // 成就检测：在发射成功后调用
+    function checkAchievementsOnSuccess(eraName, failRate) {
+      const count = localCount; // 已在 doLaunch 里 +1 后调用
+
+      // 次数类
+      if (count === 1)   unlockAchievement('first_launch');
+      if (count === 42)  unlockAchievement('launch_42');
+      if (count === 50)  unlockAchievement('launch_50');
+      if (count === 100) unlockAchievement('launch_100');
+      if (count === 300) unlockAchievement('launch_300');
+      if (count === 500) unlockAchievement('launch_500');
+
+      // 天气类
+      if (eraName === '三日凌空') unlockAchievement('sunny_success');
+      if (eraName === '多飞星严寒') {
+        // 极寒成功次数需要单独计数
+        const coldKey = 'earth-coord-cold-success';
+        const coldCount = Number(localStorage.getItem(coldKey) || 0) + 1;
+        localStorage.setItem(coldKey, String(coldCount));
+        if (coldCount >= 10) unlockAchievement('cold_success_10');
+      }
+
+      // 深夜类
+      const h = new Date().getHours();
+      if (h >= 1 && h < 5) unlockAchievement('night_owl');
+
+      // 连续签到
+      checkStreakAchievement();
+
+      // 连续失败计数重置
+      consecutiveFailCount = 0;
+    }
+
+    // 成就检测：在发射失败后调用
+    function checkAchievementsOnFail(failRate) {
+      // 末日赌徒：失败率 100% 时尝试
+      if (failRate >= 1) unlockAchievement('doomsday_gambler');
+
+      // 屡败屡战：连续失败 5 次
+      consecutiveFailCount++;
+      if (consecutiveFailCount >= 5) unlockAchievement('fail_streak_5');
+    }
+
+    // 成就检测：中止倒计时
+    function checkAchievementsOnAbort() {
+      unlockAchievement('abort_countdown');
+    }
+
+    // 连续签到检测
+    function checkStreakAchievement() {
+      const today = formatDateKey(new Date());
+      // 从完整日志里提取有记录的日期集合
+      const dateset = new Set(fullLaunchLog.map(l => l.date));
+      // 检查今天、昨天、前天是否都有记录
+      const d1 = new Date(); d1.setDate(d1.getDate() - 1);
+      const d2 = new Date(); d2.setDate(d2.getDate() - 2);
+      if (dateset.has(today) && dateset.has(formatDateKey(d1)) && dateset.has(formatDateKey(d2))) {
+        unlockAchievement('streak_3days');
+      }
+    }
+
+    // 渲染成就墙
+    function renderAchievementGrid() {
+      const unlockedIds = Object.keys(achState);
+      const n = unlockedIds.length;
+      if (achUnlockedCount)  achUnlockedCount.textContent  = n;
+      if (achUnlockedCount2) achUnlockedCount2.textContent = n;
+      achievementGrid.innerHTML = ACHIEVEMENTS.map(def => {
+        const unlocked = !!achState[def.id];
+        const isHiddenLocked = def.hidden && !unlocked;
+        const cls = unlocked ? 'ach-card unlocked' : (isHiddenLocked ? 'ach-card hidden-locked' : 'ach-card');
+        const displayEmoji = isHiddenLocked ? '🔒' : def.emoji;
+        const displayName  = isHiddenLocked ? '???' : def.name;
+        return '<button type="button" class="' + cls + '" data-ach-id="' + def.id + '" ' +
+          (unlocked ? '' : 'disabled ') +
+          'aria-label="' + (unlocked ? def.name + '：' + def.desc : (isHiddenLocked ? '隐藏成就' : def.name + '（未解锁）')) + '">' +
+          '<span class="ach-emoji">' + displayEmoji + '</span>' +
+          '<span class="ach-name">' + displayName + '</span>' +
+          '</button>';
+      }).join('');
+
+      // 点击已解锁的成就卡片，弹出详情
+      achievementGrid.querySelectorAll('.ach-card.unlocked').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.dataset.achId;
+          const def = ACHIEVEMENTS.find(a => a.id === id);
+          if (!def) return;
+          const ts = achState[id] && achState[id].unlockedAt;
+          openAchDetail(def, ts);
+        });
+      });
+    }
+
+    // 成就解锁通知（右下角浮出）
+    let achToastTimer = 0;
+    const achToastQueue = [];
+    let achToastShowing = false;
+
+    function showAchToast(def) {
+      achToastQueue.push(def);
+      if (!achToastShowing) drainAchToastQueue();
+    }
+    function drainAchToastQueue() {
+      if (achToastQueue.length === 0) { achToastShowing = false; return; }
+      achToastShowing = true;
+      const def = achToastQueue.shift();
+      achToastEmoji.textContent  = def.emoji;
+      achToastName.textContent   = def.name;
+      achToastDesc.textContent   = def.desc;
+      achToastFlavor.textContent = def.flavor;
+      achToast.classList.add('show');
+      clearTimeout(achToastTimer);
+      achToastTimer = setTimeout(() => {
+        achToast.classList.remove('show');
+        setTimeout(drainAchToastQueue, 400);
+      }, 4500);
+    }
+    function closeAchToast() {
+      clearTimeout(achToastTimer);
+      achToast.classList.remove('show');
+      setTimeout(drainAchToastQueue, 400);
+    }
+    achToastClose.addEventListener('click', closeAchToast);
+
+    // 成就详情弹窗
+    function openAchDetail(def, ts) {
+      achDetailEmoji.textContent  = def.emoji;
+      achDetailName.textContent   = def.name;
+      achDetailDesc.textContent   = def.desc;
+      achDetailFlavor.textContent = def.flavor;
+      if (ts) {
+        const d = new Date(ts);
+        achDetailTime.textContent = '解锁于 ' + d.getFullYear() + '-' +
+          String(d.getMonth()+1).padStart(2,'0') + '-' +
+          String(d.getDate()).padStart(2,'0') + ' ' +
+          String(d.getHours()).padStart(2,'0') + ':' +
+          String(d.getMinutes()).padStart(2,'0');
+      } else {
+        achDetailTime.textContent = '';
+      }
+      achDetailOverlay.classList.add('show');
+      achDetailOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeAchDetail() {
+      achDetailOverlay.classList.remove('show');
+      achDetailOverlay.setAttribute('aria-hidden', 'true');
+    }
+    achDetailClose.addEventListener('click', closeAchDetail);
+    achDetailOverlay.addEventListener('click', e => { if (e.target === achDetailOverlay) closeAchDetail(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && achDetailOverlay.classList.contains('show')) closeAchDetail();
+    });
+
+    // 初始渲染成就墙
+    renderAchievementGrid();
+
+    // ── 发射确认弹窗 ──
+    function openConfirmModal() {
+      // 填充当前状态
+      confirmMood.textContent = currentMood;
+      const era = currentEra || eraStates[0];
+      const successPct = Math.round((1 - era.failRate) * 100);
+      const level = era.failRate >= 0.6 ? 'danger' : era.failRate >= 0.3 ? 'risky' : '';
+      confirmRiskDot.className = 'confirm-risk-dot' + (level ? ' ' + level : '');
+      confirmRiskText.innerHTML = '<strong>' + era.era + '</strong> · 发射成功率 ' + successPct + '% · ' + era.riskLabel;
+      confirmOverlay.classList.add('show');
+      confirmOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function closeConfirmModal() {
+      confirmOverlay.classList.remove('show');
+      confirmOverlay.setAttribute('aria-hidden', 'true');
+    }
+    confirmCancelBtn.addEventListener('click', closeConfirmModal);
+    confirmOverlay.addEventListener('click', e => { if (e.target === confirmOverlay) closeConfirmModal(); });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && confirmOverlay.classList.contains('show')) closeConfirmModal();
+    });
+
+    // 确认后进入倒计时
+    confirmLaunchBtn.addEventListener('click', () => {
+      closeConfirmModal();
+      startCountdown();
+    });
+
+    // ── 发射倒计时 ──
+    let countdownTimer = null;
+    let countdownAborted = false;
+
+    function playBeep(freq, duration) {
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.09, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(); osc.stop(ctx.currentTime + duration + 0.01);
+    }
+
+    function startCountdown() {
+      countdownAborted = false;
+      const era = currentEra || eraStates[0];
+      const raStr = confirmRA.textContent || '17h 45m 40.0000s';
+      countdownCoord.innerHTML =
+        'RA ' + raStr + ' · Dec −29° 00′ 28″<br>精神状态：' + currentMood;
+
+      countdownNumber.textContent = '3';
+      countdownNumber.className = 'countdown-number';
+      countdownOverlay.classList.add('show');
+      countdownOverlay.setAttribute('aria-hidden', 'false');
+
+      let count = 3;
+      playBeep(440, 0.12);
+
+      countdownTimer = setInterval(() => {
+        if (countdownAborted) return;
+        count--;
+        if (count > 0) {
+          // 数字切换动画：先缩小再弹出
+          countdownNumber.style.opacity = '0';
+          countdownNumber.style.transform = 'scale(0.7)';
+          setTimeout(() => {
+            countdownNumber.textContent = String(count);
+            countdownNumber.style.opacity = '1';
+            countdownNumber.style.transform = 'scale(1)';
+          }, 120);
+          playBeep(440, 0.12);
+        } else {
+          // 倒计时结束：显示"发射！"
+          clearInterval(countdownTimer);
+          countdownNumber.style.opacity = '0';
+          countdownNumber.style.transform = 'scale(0.7)';
+          setTimeout(() => {
+            countdownNumber.textContent = '发射';
+            countdownNumber.className = 'countdown-number go';
+            countdownNumber.style.opacity = '1';
+            countdownNumber.style.transform = 'scale(1)';
+            playBeep(880, 0.25);
+            // 短暂展示"发射"后关闭倒计时，进入发射流程
+            setTimeout(() => {
+              countdownOverlay.classList.remove('show');
+              countdownOverlay.setAttribute('aria-hidden', 'true');
+              if (!countdownAborted) doLaunch();
+            }, 500);
+          }, 120);
+        }
+      }, 1000);
+    }
+
+    function abortCountdown() {
+      countdownAborted = true;
+      clearInterval(countdownTimer);
+      countdownOverlay.classList.remove('show');
+      countdownOverlay.setAttribute('aria-hidden', 'true');
+      playComfortSound();
+      showToast('广播已中止 · 坐标暂时保留在本地');
+      checkAchievementsOnAbort();
+    }
+
+    countdownAbortBtn.addEventListener('click', abortCountdown);
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && countdownOverlay.classList.contains('show')) abortCountdown();
+    });
 
     // ── Audio (Web Audio API) ──
     let audioCtx = null;
@@ -1601,7 +2515,7 @@
     }
 
     // ── Launch ──
-    async function launch() {
+    async function doLaunch() {
       if (isLaunching) return;
       isLaunching = true;
       launchButton.disabled = true;
@@ -1685,6 +2599,7 @@
       showReplyModal(replyBody, replyRole, code, false);
       pushActivity(pick(activities));
       pushHistory(code, currentMood, false, era.era);
+      checkAchievementsOnSuccess(era.era, era.failRate);
       showToast('坐标已发射 · 编号 ' + code);
 
       await wait(260);
@@ -1725,6 +2640,7 @@
       showReplyModal(replyBody, replyRole, code, true);
       pushActivity('一次坐标发射被' + era.era + '的干扰吞没，未能送达。');
       pushHistory(code, currentMood, true, era.era);
+      checkAchievementsOnFail(era.failRate);
       showToast('发射失败 · ' + era.era + ' 信号中断');
 
       await wait(500);
@@ -1753,7 +2669,10 @@
       if (isLaunching) { launchButton.disabled = false; isLaunching = false; }
     }
 
-    launchButton.addEventListener('click', launch);
+    launchButton.addEventListener('click', () => {
+      if (isLaunching) return;
+      openConfirmModal();
+    });
     comfortButton.addEventListener('click', comfort);
 
     // ── Starfield Canvas ──
