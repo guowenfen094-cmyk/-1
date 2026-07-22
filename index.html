@@ -256,28 +256,11 @@
     .radar {
       width: min(84vw, 400px); aspect-ratio: 1;
       position: relative; border-radius: 50%;
-      border: 1px solid rgba(88,242,161,0.32);
-      background:
-        radial-gradient(circle, rgba(88,242,161,0.2) 0 2px, transparent 3px),
-        repeating-radial-gradient(circle, transparent 0 52px, rgba(88,242,161,0.1) 53px 54px),
-        linear-gradient(90deg, transparent calc(50% - 1px), rgba(88,242,161,0.15) 50%, transparent calc(50% + 1px)),
-        linear-gradient(0deg, transparent calc(50% - 1px), rgba(88,242,161,0.15) 50%, transparent calc(50% + 1px));
-      box-shadow: 0 0 90px rgba(88,242,161,0.1), inset 0 0 60px rgba(88,242,161,0.06);
       overflow: hidden;
     }
-    .radar::before {
-      content: ""; position: absolute; inset: 50% 50% 0 0;
-      transform-origin: 100% 0;
-      background: linear-gradient(45deg, rgba(88,242,161,0.6), transparent 55%);
-      animation: sweep 4s linear infinite;
-    }
-    .radar::after {
-      content: ""; position: absolute; inset: 15%; border-radius: 50%;
-      background:
-        radial-gradient(circle at 42% 44%, #b8d7c4 0 2.5%, #487864 2.6% 7%, #1e5b72 7.1% 12%, transparent 12.2%),
-        radial-gradient(circle at 55% 57%, rgba(91,215,246,0.95) 0 16%, rgba(38,109,118,0.9) 17% 32%, rgba(7,10,13,0.2) 33%);
-      border: 1px solid rgba(91,215,246,0.32);
-      box-shadow: inset -18px -22px 30px rgba(0,0,0,0.48), 0 0 50px rgba(91,215,246,0.14);
+    .radar-webgl-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      border-radius: 50%;
     }
     .signal {
       position: absolute; left: 50%; top: 50%;
@@ -823,6 +806,23 @@
       border-color: rgba(237,247,236,0.06);
       background: rgba(255,255,255,0.01);
     }
+    /* 普通未解锁成就可点击 */
+    .ach-card:not(.unlocked):not(.hidden-locked) {
+      cursor: pointer;
+    }
+    .ach-card:not(.unlocked):not(.hidden-locked):hover {
+      border-color: rgba(138,160,154,0.3);
+      background: rgba(138,160,154,0.06);
+      transform: translateY(-1px);
+    }
+    /* 隐藏未解锁成就也可点击，但 hover 效果更弱 */
+    .ach-card.hidden-locked {
+      cursor: pointer;
+    }
+    .ach-card.hidden-locked:hover {
+      border-color: rgba(237,247,236,0.12);
+      background: rgba(255,255,255,0.03);
+    }
     .ach-emoji {
       font-size: 22px; line-height: 1;
       filter: grayscale(1) opacity(0.25);
@@ -887,7 +887,7 @@
 
     /* 成就详情弹窗（点击成就卡片） */
     .ach-detail-overlay {
-      position: fixed; inset: 0; z-index: 35;
+      position: fixed; inset: 0; z-index: 42;
       background: rgba(4,6,7,0.72); backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center; padding: 20px;
       opacity: 0; pointer-events: none; transition: opacity 200ms ease;
@@ -904,14 +904,32 @@
       transition: transform 280ms cubic-bezier(0.34,1.56,0.64,1), opacity 240ms ease;
     }
     .ach-detail-overlay.show .ach-detail-modal { transform: translateY(0) scale(1); opacity: 1; }
+    /* 未解锁成就详情弹窗样式 */
+    .ach-detail-modal.locked {
+      border-color: rgba(138,160,154,0.25);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.65), 0 0 30px rgba(138,160,154,0.06);
+    }
     .ach-detail-emoji { font-size: 52px; margin-bottom: 14px; display: block; }
+    .ach-detail-emoji.locked-emoji { filter: grayscale(1) opacity(0.35); }
     .ach-detail-name { margin: 0 0 6px; font-size: 20px; color: var(--amber); letter-spacing: -0.01em; }
+    .ach-detail-modal.locked .ach-detail-name { color: var(--muted); }
     .ach-detail-desc { font-size: 13px; color: #b0c8b8; margin: 0 0 10px; line-height: 1.6; }
+    .ach-detail-modal.locked .ach-detail-desc { color: rgba(138,160,154,0.6); }
     .ach-detail-flavor {
       font-size: 12px; color: var(--muted); font-style: italic; margin: 0 0 18px;
       padding: 10px 14px; border-radius: var(--radius);
       border: 1px dashed rgba(246,195,91,0.2); background: rgba(246,195,91,0.04);
     }
+    .ach-detail-modal.locked .ach-detail-flavor {
+      border-color: rgba(138,160,154,0.15); background: rgba(138,160,154,0.03);
+    }
+    .ach-detail-locked-hint {
+      display: none; font-size: 12px; color: rgba(138,160,154,0.7);
+      margin: 0 0 18px; padding: 8px 14px; border-radius: var(--radius);
+      border: 1px solid rgba(138,160,154,0.15); background: rgba(138,160,154,0.04);
+    }
+    .ach-detail-modal.locked .ach-detail-locked-hint { display: block; }
+    .ach-detail-modal.locked .ach-detail-flavor { display: none; }
     .ach-detail-time { font-size: 11px; color: var(--muted); margin-bottom: 18px; font-family: ui-monospace, monospace; }
     .ach-detail-close {
       min-height: 40px; padding: 0 24px; border: 0; border-radius: 10px; cursor: pointer;
@@ -920,7 +938,14 @@
       background: linear-gradient(135deg, var(--amber), #d4a030);
       box-shadow: 0 6px 20px rgba(246,195,91,0.25); transition: all 150ms;
     }
-    .ach-detail-close:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .ach-detail-modal.locked .ach-detail-close {
+      color: var(--muted);
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(237,247,236,0.12);
+      box-shadow: none;
+    }
+    .ach-detail-modal.locked .ach-detail-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+    .ach-detail-close:not(.locked-btn):hover { filter: brightness(1.08); transform: translateY(-1px); }
 
     /* 三体回信弹窗（发射后的高光展示） */
     .reply-overlay {
@@ -965,7 +990,7 @@
       font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em;
       color: var(--amber); background: rgba(246,195,91,0.08); border: 1px solid rgba(246,195,91,0.2);
     }
-    .reply-actions { display: flex; justify-content: center; }
+    .reply-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
     .reply-close-btn {
       min-height: 44px; padding: 0 28px; border: 0; border-radius: 10px; cursor: pointer;
       font-size: 15px; font-weight: 700; color: #06231a;
@@ -973,6 +998,75 @@
       box-shadow: 0 8px 24px rgba(88,242,161,0.25); transition: all 150ms;
     }
     .reply-close-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .reply-save-btn {
+      min-height: 44px; padding: 0 20px; border-radius: 10px; cursor: pointer;
+      font-size: 14px; font-weight: 600; font: inherit; font-weight: 600;
+      color: var(--amber);
+      border: 1px solid rgba(246,195,91,0.4);
+      background: rgba(246,195,91,0.08);
+      box-shadow: 0 4px 16px rgba(246,195,91,0.1); transition: all 150ms;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .reply-save-btn:hover { background: rgba(246,195,91,0.16); border-color: rgba(246,195,91,0.6); transform: translateY(-1px); }
+    .reply-save-btn:active { transform: translateY(0); }
+    .reply-save-btn.saving { opacity: 0.7; cursor: wait; }
+
+    /* ── 卡片预览弹窗 ── */
+    .card-preview-overlay {
+      position: fixed; inset: 0; z-index: 55;
+      background: rgba(2,4,4,0.9); backdrop-filter: blur(10px);
+      display: flex; flex-direction: column; align-items: center;
+      padding: 16px 16px 20px; gap: 12px;
+      opacity: 0; pointer-events: none; transition: opacity 240ms ease;
+      /* 关键：让内容区撑满视口高度，canvas 按高度缩放 */
+      height: 100%;
+      box-sizing: border-box;
+    }
+    .card-preview-overlay.show { opacity: 1; pointer-events: auto; }
+    .card-preview-header {
+      display: flex; align-items: center; gap: 12px;
+      width: 100%; max-width: 400px;
+      flex: 0 0 auto;
+    }
+    .card-preview-title {
+      flex: 1; font-size: 14px; color: var(--muted); letter-spacing: 0.02em;
+    }
+    .card-preview-close {
+      width: 34px; height: 34px; border-radius: 50%;
+      border: 1px solid rgba(237,247,236,0.14); background: rgba(255,255,255,0.04);
+      color: var(--muted); cursor: pointer; font-size: 15px;
+      display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+      transition: all 160ms;
+    }
+    .card-preview-close:hover { border-color: rgba(255,77,77,0.4); color: var(--red); background: rgba(255,77,77,0.08); }
+    /* canvas 容器：占满剩余高度，按高度约束宽度 */
+    .card-preview-canvas-wrap {
+      flex: 1 1 0; min-height: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-preview-canvas-wrap canvas {
+      display: block;
+      /* 高度撑满容器，宽度自动（保持 9:16 比例） */
+      max-height: 100%;
+      width: auto;
+      height: 100%;
+      border-radius: 16px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(225,238,222,0.1);
+    }
+    .card-preview-actions {
+      display: flex; gap: 10px;
+      width: 100%; max-width: 360px;
+      flex: 0 0 auto;
+    }
+    .card-download-btn {
+      flex: 1; min-height: 48px; border: 0; border-radius: 12px; cursor: pointer;
+      font-size: 15px; font-weight: 700; font: inherit; font-weight: 700;
+      color: #06231a;
+      background: linear-gradient(135deg, var(--amber), #d4a030);
+      box-shadow: 0 8px 24px rgba(246,195,91,0.28); transition: all 150ms;
+    }
+    .card-download-btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+    .card-download-btn:active { transform: translateY(0); }
     /* 角色配色主题 */
     .reply-modal.role-luoji { border-color: rgba(246,195,91,0.3); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(246,195,91,0.1); }
     .reply-modal.role-luoji .reply-role { color: var(--amber); border-color: rgba(246,195,91,0.35); background: rgba(246,195,91,0.08); }
@@ -984,6 +1078,150 @@
     .reply-modal.role-fail .reply-role { color: var(--red); border-color: rgba(255,77,77,0.35); background: rgba(255,77,77,0.08); }
     .reply-modal.role-fail .reply-text.typing::after { color: var(--red); }
     .reply-modal.role-fail .reply-close-btn { background: linear-gradient(135deg, #ff6b6b, #c0392b); color: #fff; box-shadow: 0 8px 24px rgba(255,77,77,0.25); }
+
+    /* ── 发射进行中覆盖层（盖在 hero panel 上） ── */
+    .broadcast-overlay {
+      position: absolute; inset: 0; z-index: 10;
+      border-radius: var(--radius);
+      background: rgba(6, 10, 9, 0.93);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 220ms ease;
+    }
+    .broadcast-overlay.show {
+      opacity: 1; pointer-events: auto;
+    }
+    .broadcast-overlay-inner {
+      width: min(100%, 560px);
+      padding: 0 clamp(20px, 4vw, 48px);
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .broadcast-header {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .broadcast-pulse {
+      width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto;
+      background: var(--red);
+      box-shadow: 0 0 10px rgba(255,77,77,0.8);
+      animation: broadcastBlink 0.9s step-end infinite;
+    }
+    @keyframes broadcastBlink { 50% { opacity: 0.15; } }
+    .broadcast-label {
+      font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); flex: 1;
+    }
+    .broadcast-pct {
+      font-family: ui-monospace, monospace; font-size: 13px;
+      color: var(--green); letter-spacing: 0.06em;
+      transition: color 300ms;
+    }
+    .broadcast-pct.fail { color: var(--red); }
+    .broadcast-log {
+      min-height: 220px; max-height: 320px;
+      overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+      scrollbar-width: thin; scrollbar-color: rgba(225,238,222,0.1) transparent;
+    }
+    .broadcast-log::-webkit-scrollbar { width: 3px; }
+    .broadcast-log::-webkit-scrollbar-thumb { background: rgba(225,238,222,0.12); border-radius: 2px; }
+    .broadcast-log p {
+      margin: 0;
+      font-family: ui-monospace, monospace; font-size: 13px;
+      color: #d0ffe0; line-height: 1.7; word-break: break-word;
+      animation: logLineIn 0.25s ease both;
+    }
+    @keyframes logLineIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .broadcast-log p.log-glitch { color: var(--amber) !important; }
+    .broadcast-log p.log-err    { color: var(--red)   !important; }
+    .broadcast-bar-wrap {
+      height: 3px; border-radius: 2px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+    .broadcast-bar {
+      height: 100%; width: 0%; border-radius: 2px;
+      background: linear-gradient(90deg, var(--green), var(--amber), var(--red));
+      box-shadow: 0 0 8px rgba(88,242,161,0.4);
+      transition: width 200ms ease, background 400ms ease;
+    }
+    .broadcast-bar.fail {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255,77,77,0.5);
+    }
+
+    /* ── 发射结果瞬间覆盖层 ── */
+    .result-flash-overlay {
+      position: fixed; inset: 0; z-index: 32;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+    .result-flash-overlay.show { opacity: 1; pointer-events: auto; }
+
+    /* 成功：深绿底 */
+    .result-flash-overlay.success {
+      background: radial-gradient(circle at 50% 46%, rgba(20,50,34,0.97) 0%, rgba(6,12,9,0.99) 100%);
+    }
+    /* 失败：深红底 */
+    .result-flash-overlay.failure {
+      background: radial-gradient(circle at 50% 46%, rgba(50,12,12,0.97) 0%, rgba(8,6,6,0.99) 100%);
+    }
+
+    .result-flash-icon {
+      font-size: clamp(64px, 14vw, 110px);
+      line-height: 1;
+      animation: resultIconPop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes resultIconPop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+
+    .result-flash-title {
+      font-size: clamp(28px, 6vw, 56px);
+      font-weight: 900; letter-spacing: -0.02em; line-height: 1;
+      animation: resultTitleSlide 0.38s 0.1s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .result-flash-overlay.success .result-flash-title { color: var(--green); text-shadow: 0 0 60px rgba(88,242,161,0.55); }
+    .result-flash-overlay.failure .result-flash-title { color: var(--red);   text-shadow: 0 0 60px rgba(255,77,77,0.55); }
+    @keyframes resultTitleSlide {
+      0%   { transform: translateY(18px); opacity: 0; }
+      100% { transform: translateY(0);    opacity: 1; }
+    }
+
+    .result-flash-sub {
+      font-size: clamp(13px, 2vw, 16px); color: var(--muted); letter-spacing: 0.04em;
+      animation: resultTitleSlide 0.38s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* 成功时：绿色光晕扩散 */
+    .result-flash-overlay.success::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 50% 46%, rgba(88,242,161,0.18) 0%, transparent 65%);
+      animation: resultGlow 1.2s ease-out both;
+    }
+    /* 失败时：红色闪烁 */
+    .result-flash-overlay.failure::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 50% 46%, rgba(255,77,77,0.22) 0%, transparent 65%);
+      animation: resultFailFlicker 0.6s ease both;
+    }
+    @keyframes resultGlow {
+      0%   { opacity: 0; transform: scale(0.6); }
+      40%  { opacity: 1; }
+      100% { opacity: 0.6; transform: scale(1.2); }
+    }
+    @keyframes resultFailFlicker {
+      0%,100% { opacity: 0.8; }
+      25%     { opacity: 0.2; }
+      50%     { opacity: 1;   }
+      75%     { opacity: 0.3; }
+    }
 
     /* Keyframes */
     @keyframes sweep { to { transform: rotate(360deg); } }
@@ -1042,7 +1280,19 @@
         <div class="status-chip" id="systemStatus">系统状态：假装冷静</div>
       </header>
 
-      <section class="panel hero" id="heroPanel">
+      <section class="panel hero" id="heroPanel" style="position:relative;">
+        <!-- 发射进行中覆盖层 -->
+        <div class="broadcast-overlay" id="broadcastOverlay" aria-hidden="true" aria-live="polite">
+          <div class="broadcast-overlay-inner">
+            <div class="broadcast-header">
+              <span class="broadcast-pulse"></span>
+              <span class="broadcast-label" id="broadcastLabel">广播进行中</span>
+              <span class="broadcast-pct" id="broadcastPct">0%</span>
+            </div>
+            <div class="broadcast-log" id="broadcastLog"></div>
+            <div class="broadcast-bar-wrap"><div class="broadcast-bar" id="broadcastBar"></div></div>
+          </div>
+        </div>
         <div class="hero-text">
           <div class="coord-badge">
             <span class="blink">●</span>
@@ -1096,6 +1346,7 @@
 
         <div class="visual" id="visual">
           <div class="radar" id="radar" aria-hidden="true">
+            <div id="radarWebgl" style="position:absolute;inset:0;border-radius:50%;overflow:hidden;"></div>
             <div class="signal"></div>
             <div class="ring"></div>
             <div class="ring"></div>
@@ -1271,11 +1522,12 @@
 
   <!-- 成就详情弹窗（点击成就卡片） -->
   <div class="ach-detail-overlay" id="achDetailOverlay" aria-hidden="true">
-    <div class="ach-detail-modal" role="dialog" aria-modal="true" aria-label="成就详情">
+    <div class="ach-detail-modal" id="achDetailModal" role="dialog" aria-modal="true" aria-label="成就详情">
       <span class="ach-detail-emoji" id="achDetailEmoji">🔴</span>
       <h3 class="ach-detail-name" id="achDetailName">初次广播</h3>
       <p class="ach-detail-desc" id="achDetailDesc">完成第一次坐标发射</p>
       <p class="ach-detail-flavor" id="achDetailFlavor">智子已将此成就记录在案。</p>
+      <p class="ach-detail-locked-hint" id="achDetailLockedHint">🔒 继续探索，解锁此成就后可查看详情</p>
       <div class="ach-detail-time" id="achDetailTime"></div>
       <button class="ach-detail-close" type="button" id="achDetailClose">收下</button>
     </div>
@@ -1339,6 +1591,13 @@
     <button class="countdown-abort-btn" type="button" id="countdownAbortBtn">中止广播</button>
   </div>
 
+  <!-- 发射结果瞬间覆盖层 -->
+  <div class="result-flash-overlay" id="resultFlashOverlay" aria-hidden="true">
+    <div class="result-flash-icon" id="resultFlashIcon"></div>
+    <div class="result-flash-title" id="resultFlashTitle"></div>
+    <div class="result-flash-sub" id="resultFlashSub"></div>
+  </div>
+
   <!-- 三体回信弹窗（发射后的高光展示） -->
   <div class="reply-overlay" id="replyOverlay" aria-hidden="true">
     <div class="reply-modal" id="replyModal" role="dialog" aria-modal="true" aria-label="三体回信">
@@ -1351,8 +1610,21 @@
         <span class="reply-code" id="replyCode">NO-SIGNAL</span>
       </div>
       <div class="reply-actions">
+        <button class="reply-save-btn" type="button" id="replySaveBtn">📸 预览发射卡片</button>
         <button class="reply-close-btn" type="button" id="replyCloseBtn">收下这条回信</button>
       </div>
+    </div>
+  </div>
+
+  <!-- 发射卡片预览弹窗 -->
+  <div class="card-preview-overlay" id="cardPreviewOverlay" aria-hidden="true">
+    <div class="card-preview-header">
+      <span class="card-preview-title">📸 发射卡片预览</span>
+      <button class="card-preview-close" type="button" id="cardPreviewClose" aria-label="关闭预览">✕</button>
+    </div>
+    <div class="card-preview-canvas-wrap" id="cardPreviewWrap"></div>
+    <div class="card-preview-actions">
+      <button class="card-download-btn" type="button" id="cardDownloadBtn">⬇ 保存图片</button>
     </div>
   </div>
 
@@ -1381,7 +1653,12 @@
     const sessionCountEl  = document.querySelector('#sessionCount');
     const queueCountEl    = document.querySelector('#queueCount');
     const globalCountEl   = document.querySelector('#globalCount');
-    const logBox          = document.querySelector('#logBox');
+    const logBox            = document.querySelector('#logBox');
+    const broadcastOverlay  = document.querySelector('#broadcastOverlay');
+    const broadcastLog      = document.querySelector('#broadcastLog');
+    const broadcastPct      = document.querySelector('#broadcastPct');
+    const broadcastBar      = document.querySelector('#broadcastBar');
+    const broadcastLabel    = document.querySelector('#broadcastLabel');
     const visual          = document.querySelector('#visual');
     const progressBar     = document.querySelector('#progressBar');
     const receiptText     = document.querySelector('#receiptText');
@@ -1442,6 +1719,10 @@
     const countdownNumber   = document.querySelector('#countdownNumber');
     const countdownCoord    = document.querySelector('#countdownCoord');
     const countdownAbortBtn = document.querySelector('#countdownAbortBtn');
+    const resultFlashOverlay = document.querySelector('#resultFlashOverlay');
+    const resultFlashIcon    = document.querySelector('#resultFlashIcon');
+    const resultFlashTitle   = document.querySelector('#resultFlashTitle');
+    const resultFlashSub     = document.querySelector('#resultFlashSub');
     const replyOverlay    = document.querySelector('#replyOverlay');
     const replyModal      = document.querySelector('#replyModal');
     const replyRoleIcon   = document.querySelector('#replyRoleIcon');
@@ -1746,7 +2027,37 @@
     subscribeGlobalCount();
 
     // ── Progress ──
-    function setProgress(v) { progressBar.style.setProperty('--progress', v + '%'); }
+    function setProgress(v) {
+      progressBar.style.setProperty('--progress', v + '%');
+      // 同步更新覆盖层进度条和百分比
+      broadcastBar.style.width = v + '%';
+      broadcastPct.textContent = v + '%';
+    }
+
+    // 显示/隐藏广播覆盖层
+    function showBroadcastOverlay() {
+      broadcastLog.innerHTML = '';
+      broadcastBar.style.width = '0%';
+      broadcastBar.classList.remove('fail');
+      broadcastPct.textContent = '0%';
+      broadcastPct.classList.remove('fail');
+      broadcastLabel.textContent = '广播进行中';
+      broadcastOverlay.classList.add('show');
+      broadcastOverlay.setAttribute('aria-hidden', 'false');
+    }
+    function hideBroadcastOverlay() {
+      broadcastOverlay.classList.remove('show');
+      broadcastOverlay.setAttribute('aria-hidden', 'true');
+    }
+    // 向覆盖层日志追加一行
+    function appendBroadcastLog(text, cls) {
+      const p = document.createElement('p');
+      p.textContent = text;
+      if (cls) p.classList.add(cls);
+      broadcastLog.append(p);
+      // 自动滚到底部
+      broadcastLog.scrollTop = broadcastLog.scrollHeight;
+    }
 
     // ── Toast ──
     function showToast(msg) {
@@ -1980,6 +2291,33 @@
     calNextBtn.addEventListener('click', () => changeCalMonth(1));
     calBackBtn.addEventListener('click', () => showDayDetail(null));
 
+    // ── 发射结果瞬间覆盖层 ──
+    // success=true 显示成功画面，success=false 显示失败画面
+    // 返回一个 Promise，在覆盖层自动消失后 resolve，调用方 await 后再弹回信弹窗
+    function showResultFlash(success) {
+      return new Promise(resolve => {
+        resultFlashOverlay.className = 'result-flash-overlay ' + (success ? 'success' : 'failure');
+        resultFlashIcon.textContent  = success ? '✓' : '✗';
+        resultFlashTitle.textContent = success ? '坐标已送达' : '链路中断';
+        resultFlashSub.textContent   = success
+          ? '信号穿越 4.22 光年，正在等待三体回应'
+          : '信号在星际干扰中被截断，残响仍在传播';
+
+        // 强制重排，确保动画从头播放
+        void resultFlashOverlay.offsetWidth;
+        resultFlashOverlay.classList.add('show');
+        resultFlashOverlay.setAttribute('aria-hidden', 'false');
+
+        // 展示 1.4 秒后淡出，淡出完成后 resolve
+        setTimeout(() => {
+          resultFlashOverlay.classList.remove('show');
+          resultFlashOverlay.setAttribute('aria-hidden', 'true');
+          // 等淡出动画（180ms）结束后再 resolve
+          setTimeout(resolve, 200);
+        }, 1400);
+      });
+    }
+
     // ── 三体回信弹窗（发射高光展示 + 打字机效果） ──
     const ROLE_META = {
       '三体客服': { icon: '📡', cls: '' },
@@ -1997,6 +2335,10 @@
         if (i >= text.length) { clearInterval(replyTypeTimer); el.classList.remove('typing'); }
       }, speed);
     }
+    // 当前回信弹窗的发射信息（供保存卡片使用）
+    let currentReplySnapshot = null;
+    const replySaveBtn = document.querySelector('#replySaveBtn');
+
     // role 传 null 表示静态文案（无 AI 角色）；failed=true 用失败红色主题
     function showReplyModal(text, role, code, failed) {
       const meta = ROLE_META[role] || { icon: '📡', cls: '' };
@@ -2009,6 +2351,13 @@
       replyOverlay.classList.add('show');
       replyOverlay.setAttribute('aria-hidden', 'false');
       typewriter(replyText, text, 45);
+      // 保存快照供卡片使用
+      currentReplySnapshot = {
+        text, roleName, roleIcon: meta.icon, code: code || '',
+        mood: currentMood, failed,
+        era: currentEra ? currentEra.era : '标准恒纪元',
+        time: new Date()
+      };
     }
     function closeReplyModal() {
       clearInterval(replyTypeTimer);
@@ -2019,6 +2368,274 @@
     replyCloseBtn.addEventListener('click', closeReplyModal);
     replyOverlay.addEventListener('click', e => { if (e.target === replyOverlay) closeReplyModal(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && replyOverlay.classList.contains('show')) closeReplyModal(); });
+
+    // ── 发射卡片预览 ──
+    const cardPreviewOverlay = document.querySelector('#cardPreviewOverlay');
+    const cardPreviewWrap    = document.querySelector('#cardPreviewWrap');
+    const cardPreviewClose   = document.querySelector('#cardPreviewClose');
+    const cardDownloadBtn    = document.querySelector('#cardDownloadBtn');
+    let   cardPreviewCanvas  = null; // 持有当前预览的 canvas，供下载使用
+
+    replySaveBtn.addEventListener('click', () => {
+      if (!currentReplySnapshot) return;
+      // 生成竖向卡片 canvas 并展示预览
+      cardPreviewCanvas = buildLaunchCardCanvas(currentReplySnapshot);
+      cardPreviewWrap.innerHTML = '';
+      cardPreviewWrap.appendChild(cardPreviewCanvas);
+      cardPreviewOverlay.classList.add('show');
+      cardPreviewOverlay.setAttribute('aria-hidden', 'false');
+    });
+
+    cardPreviewClose.addEventListener('click', closeCardPreview);
+    cardPreviewOverlay.addEventListener('click', e => { if (e.target === cardPreviewOverlay) closeCardPreview(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && cardPreviewOverlay.classList.contains('show')) closeCardPreview(); });
+
+    function closeCardPreview() {
+      cardPreviewOverlay.classList.remove('show');
+      cardPreviewOverlay.setAttribute('aria-hidden', 'true');
+    }
+
+    cardDownloadBtn.addEventListener('click', () => {
+      if (!cardPreviewCanvas || !currentReplySnapshot) return;
+      const snap = currentReplySnapshot;
+      const filename = (snap.failed ? 'launch-failed-' : 'launch-') + snap.code + '.png';
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = cardPreviewCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // 竖向卡片绘制（540×960，适配手机分享）
+    function buildLaunchCardCanvas(snap) {
+      const W = 540, H = 960;
+      const DPR = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width  = W * DPR;
+      canvas.height = H * DPR;
+      // 不设置 style.width/height，让 CSS 的 max-height:100% 控制显示尺寸
+      const ctx = canvas.getContext('2d');
+      ctx.scale(DPR, DPR);
+
+      const PAD = 32;
+      const accentColor = snap.failed ? '#ff4d4d' : '#58f2a1';
+      const accentAlpha = snap.failed ? 'rgba(255,77,77,' : 'rgba(88,242,161,';
+
+      // ── 背景 ──
+      const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+      bgGrad.addColorStop(0,   '#060708');
+      bgGrad.addColorStop(0.45, '#0e1210');
+      bgGrad.addColorStop(1,   '#13100a');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      // 光晕
+      const g1 = ctx.createRadialGradient(W * 0.2, H * 0.12, 0, W * 0.2, H * 0.12, 280);
+      g1.addColorStop(0, snap.failed ? 'rgba(255,77,77,0.18)' : 'rgba(88,242,161,0.12)');
+      g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+
+      const g2 = ctx.createRadialGradient(W * 0.85, H * 0.35, 0, W * 0.85, H * 0.35, 200);
+      g2.addColorStop(0, 'rgba(91,215,246,0.1)');
+      g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+
+      const g3 = ctx.createRadialGradient(W * 0.3, H * 0.78, 0, W * 0.3, H * 0.78, 220);
+      g3.addColorStop(0, snap.failed ? 'rgba(255,77,77,0.1)' : 'rgba(88,242,161,0.07)');
+      g3.addColorStop(1, 'transparent');
+      ctx.fillStyle = g3; ctx.fillRect(0, 0, W, H);
+
+      // 网格
+      ctx.strokeStyle = 'rgba(255,255,255,0.016)';
+      ctx.lineWidth = 0.5;
+      for (let x = 0; x < W; x += 54) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = 0; y < H; y += 54) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      // ── 外边框 ──
+      roundRect(ctx, 14, 14, W - 28, H - 28, 18, null,
+        snap.failed ? 'rgba(255,77,77,0.3)' : 'rgba(88,242,161,0.22)', 1);
+
+      // ── 顶部品牌区 ──
+      // 品牌小标
+      ctx.font = '500 11px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.55)';
+      ctx.textAlign = 'left';
+      ctx.fillText('地球坐标广播控制台', PAD, 52);
+
+      // 时间
+      const timeStr = snap.time.getFullYear() + '-' +
+        String(snap.time.getMonth()+1).padStart(2,'0') + '-' +
+        String(snap.time.getDate()).padStart(2,'0') + ' ' +
+        String(snap.time.getHours()).padStart(2,'0') + ':' +
+        String(snap.time.getMinutes()).padStart(2,'0');
+      ctx.font = '11px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.45)';
+      ctx.textAlign = 'right';
+      ctx.fillText(timeStr, W - PAD, 52);
+
+      // 分隔线
+      ctx.strokeStyle = 'rgba(225,238,222,0.08)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD, 64); ctx.lineTo(W - PAD, 64); ctx.stroke();
+
+      // ── 状态大区 ──
+      // 状态标签
+      const statusText = snap.failed ? '链路中断' : '坐标已送达';
+      const statusBg   = snap.failed ? 'rgba(255,77,77,0.1)' : 'rgba(88,242,161,0.08)';
+      const statusBd   = snap.failed ? 'rgba(255,77,77,0.35)' : 'rgba(88,242,161,0.3)';
+      roundRect(ctx, PAD, 82, 120, 26, 6, statusBg, statusBd, 1);
+      ctx.beginPath(); ctx.arc(PAD + 16, 82 + 13, 4, 0, Math.PI * 2);
+      ctx.fillStyle = accentColor; ctx.fill();
+      ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = accentColor;
+      ctx.textAlign = 'left';
+      ctx.fillText(statusText, PAD + 26, 82 + 17);
+
+      // 大标题
+      ctx.font = '900 58px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = '#edf7ec';
+      ctx.textAlign = 'left';
+      ctx.fillText(snap.failed ? '发射' : '坐标', PAD, 172);
+      ctx.fillText(snap.failed ? '失败' : '已送达', PAD, 232);
+
+      // 精神状态标签
+      ctx.font = '600 14px ui-sans-serif, system-ui, sans-serif';
+      const moodW = ctx.measureText(snap.mood).width + 28;
+      roundRect(ctx, PAD, 252, moodW, 30, 8, 'rgba(246,195,91,0.1)', 'rgba(246,195,91,0.4)', 1);
+      ctx.fillStyle = '#f6c35b';
+      ctx.fillText(snap.mood, PAD + 14, 252 + 20);
+
+      // ── 回信区 ──
+      ctx.strokeStyle = 'rgba(225,238,222,0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD, 302); ctx.lineTo(W - PAD, 302); ctx.stroke();
+
+      // 回信标签
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.55)';
+      ctx.textAlign = 'left';
+      ctx.fillText('三体回信', PAD, 322);
+
+      // 回信正文（自动换行）
+      ctx.font = '500 16px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = '#d8ede4';
+      const replyMaxW = W - PAD * 2;
+      const replyLines = wrapText(ctx, snap.text, replyMaxW, 26);
+      let ry = 346;
+      const maxLines = 7;
+      replyLines.slice(0, maxLines).forEach((line, i) => {
+        if (i === maxLines - 1 && replyLines.length > maxLines) {
+          ctx.fillStyle = 'rgba(138,160,154,0.55)';
+          ctx.fillText(line + '…', PAD, ry);
+        } else {
+          ctx.fillText(line, PAD, ry);
+        }
+        ry += 26;
+      });
+
+      // 角色署名
+      ctx.font = '12px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = 'rgba(138,160,154,0.65)';
+      ctx.fillText('—— ' + snap.roleIcon + ' ' + snap.roleName, PAD, ry + 12);
+
+      // ── 信息卡区 ──
+      const cardTop = 590;
+      const cardH   = 68;
+      const cardGap = 10;
+      const cardW   = (W - PAD * 2 - cardGap) / 2;
+
+      // 坐标卡（跨全宽）
+      roundRect(ctx, PAD, cardTop, W - PAD * 2, cardH, 10,
+        'rgba(91,215,246,0.04)', 'rgba(91,215,246,0.18)', 1);
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.6)';
+      ctx.textAlign = 'left';
+      ctx.fillText('BROADCAST COORDINATES', PAD + 14, cardTop + 18);
+      ctx.font = '600 12px ui-monospace, monospace';
+      ctx.fillStyle = '#5bd7f6';
+      ctx.fillText('RA 17h 45m 40s  ·  Dec −29° 00′ 28″', PAD + 14, cardTop + 36);
+      ctx.font = '11px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(91,215,246,0.6)';
+      ctx.fillText('26,000 光年 · 信号延迟 4.22 光年', PAD + 14, cardTop + 54);
+
+      // 三体天气卡
+      const r2top = cardTop + cardH + cardGap;
+      roundRect(ctx, PAD, r2top, cardW, cardH, 10,
+        'rgba(255,255,255,0.02)', 'rgba(225,238,222,0.1)', 1);
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.6)';
+      ctx.textAlign = 'left';
+      ctx.fillText('三体天气', PAD + 14, r2top + 20);
+      ctx.font = '600 13px ui-sans-serif, system-ui, sans-serif';
+      ctx.fillStyle = snap.failed ? '#f6c35b' : '#58f2a1';
+      const eraText = snap.era.length > 8 ? snap.era.slice(0, 8) + '…' : snap.era;
+      ctx.fillText(eraText, PAD + 14, r2top + 48);
+
+      // 广播编号卡
+      const r2right = PAD + cardW + cardGap;
+      roundRect(ctx, r2right, r2top, cardW, cardH, 10,
+        'rgba(246,195,91,0.05)', 'rgba(246,195,91,0.2)', 1);
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.6)';
+      ctx.fillText('广播编号', r2right + 14, r2top + 20);
+      ctx.font = '700 12px ui-monospace, monospace';
+      ctx.fillStyle = '#f6c35b';
+      const codeText = snap.code.length > 18 ? snap.code.slice(0, 18) + '…' : snap.code;
+      ctx.fillText(codeText, r2right + 14, r2top + 48);
+
+      // 全网发射次数卡（跨全宽）
+      const r3top = r2top + cardH + cardGap;
+      const globalNum = globalCount !== null ? formatter.format(globalCount) : '—';
+      roundRect(ctx, PAD, r3top, W - PAD * 2, cardH, 10,
+        'rgba(255,255,255,0.02)', 'rgba(225,238,222,0.1)', 1);
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.6)';
+      ctx.textAlign = 'left';
+      ctx.fillText('全网发射次数', PAD + 14, r3top + 20);
+      ctx.font = '700 18px ui-monospace, monospace';
+      ctx.fillStyle = '#edf7ec';
+      ctx.fillText('# ' + globalNum, PAD + 14, r3top + 50);
+
+      // ── 底部水印 ──
+      ctx.font = '10px ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(138,160,154,0.3)';
+      ctx.textAlign = 'center';
+      ctx.fillText('红岸精神续费失败版 · 4.22光年直播', W / 2, H - 22);
+
+      return canvas;
+    }
+
+    // Canvas 工具函数
+    function roundRect(ctx, x, y, w, h, r, fill, stroke, lineWidth) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth || 1; ctx.stroke(); }
+    }
+    function wrapText(ctx, text, maxWidth, lineHeight) {
+      const words = text.split('');
+      const lines = [];
+      let line = '';
+      for (const ch of words) {
+        const test = line + ch;
+        if (ctx.measureText(test).width > maxWidth && line.length > 0) {
+          lines.push(line);
+          line = ch;
+        } else {
+          line = test;
+        }
+      }
+      if (line) lines.push(line);
+      return lines;
+    }
 
     // ── 成就系统 ──
     const ACHIEVEMENTS = [
@@ -2217,21 +2834,21 @@
         const displayEmoji = isHiddenLocked ? '🔒' : def.emoji;
         const displayName  = isHiddenLocked ? '???' : def.name;
         return '<button type="button" class="' + cls + '" data-ach-id="' + def.id + '" ' +
-          (unlocked ? '' : 'disabled ') +
           'aria-label="' + (unlocked ? def.name + '：' + def.desc : (isHiddenLocked ? '隐藏成就' : def.name + '（未解锁）')) + '">' +
           '<span class="ach-emoji">' + displayEmoji + '</span>' +
           '<span class="ach-name">' + displayName + '</span>' +
           '</button>';
       }).join('');
 
-      // 点击已解锁的成就卡片，弹出详情
-      achievementGrid.querySelectorAll('.ach-card.unlocked').forEach(card => {
+      // 点击所有成就卡片，弹出详情（已解锁/未解锁 UI 有所区别）
+      achievementGrid.querySelectorAll('.ach-card').forEach(card => {
         card.addEventListener('click', () => {
           const id = card.dataset.achId;
           const def = ACHIEVEMENTS.find(a => a.id === id);
           if (!def) return;
+          const unlocked = !!achState[id];
           const ts = achState[id] && achState[id].unlockedAt;
-          openAchDetail(def, ts);
+          openAchDetail(def, ts, unlocked);
         });
       });
     }
@@ -2268,20 +2885,36 @@
     achToastClose.addEventListener('click', closeAchToast);
 
     // 成就详情弹窗
-    function openAchDetail(def, ts) {
-      achDetailEmoji.textContent  = def.emoji;
-      achDetailName.textContent   = def.name;
-      achDetailDesc.textContent   = def.desc;
+    const achDetailModal    = document.querySelector('#achDetailModal');
+    const achDetailLockedHint = document.querySelector('#achDetailLockedHint');
+    function openAchDetail(def, ts, unlocked) {
+      const isHiddenLocked = def.hidden && !unlocked;
+      // 设置内容
+      achDetailEmoji.textContent  = isHiddenLocked ? '🔒' : def.emoji;
+      achDetailEmoji.className    = 'ach-detail-emoji' + (unlocked ? '' : ' locked-emoji');
+      achDetailName.textContent   = isHiddenLocked ? '隐藏成就' : def.name;
+      achDetailDesc.textContent   = isHiddenLocked ? '完成特定条件后解锁' : def.desc;
       achDetailFlavor.textContent = def.flavor;
-      if (ts) {
-        const d = new Date(ts);
-        achDetailTime.textContent = '解锁于 ' + d.getFullYear() + '-' +
-          String(d.getMonth()+1).padStart(2,'0') + '-' +
-          String(d.getDate()).padStart(2,'0') + ' ' +
-          String(d.getHours()).padStart(2,'0') + ':' +
-          String(d.getMinutes()).padStart(2,'0');
+      // 锁定/解锁 UI 切换
+      if (unlocked) {
+        achDetailModal.classList.remove('locked');
+        achDetailClose.textContent = '收下';
+        achDetailClose.classList.remove('locked-btn');
+        if (ts) {
+          const d = new Date(ts);
+          achDetailTime.textContent = '解锁于 ' + d.getFullYear() + '-' +
+            String(d.getMonth()+1).padStart(2,'0') + '-' +
+            String(d.getDate()).padStart(2,'0') + ' ' +
+            String(d.getHours()).padStart(2,'0') + ':' +
+            String(d.getMinutes()).padStart(2,'0');
+        } else {
+          achDetailTime.textContent = '';
+        }
       } else {
-        achDetailTime.textContent = '';
+        achDetailModal.classList.add('locked');
+        achDetailClose.textContent = '知道了';
+        achDetailClose.classList.add('locked-btn');
+        achDetailTime.textContent = '尚未解锁';
       }
       achDetailOverlay.classList.add('show');
       achDetailOverlay.setAttribute('aria-hidden', 'false');
@@ -2526,6 +3159,9 @@
       shakeScreen();
       playLaunchSound();
 
+      // 显示 hero panel 内的广播覆盖层
+      showBroadcastOverlay();
+
       const era = currentEra || eraStates[0];
       const willFail = Math.random() < era.failRate;
 
@@ -2556,11 +3192,14 @@
 
       for (let i = 0; i < cutoffIndex; i++) {
         await wait(340 + Math.random() * 240);
-        const line = document.createElement('p');
         const pct  = Math.round(((i + 1) / steps.length) * 100);
-        line.textContent = '[' + String(pct).padStart(3, '0') + '%] ' + steps[i];
+        const text = '[' + String(pct).padStart(3, '0') + '%] ' + steps[i];
+        // 同时写入原 logBox（雷达旁）和覆盖层日志
+        const line = document.createElement('p');
+        line.textContent = text;
         if (era.chaotic) line.classList.add('log-glitch');
         logBox.append(line);
+        appendBroadcastLog(text, era.chaotic ? 'log-glitch' : null);
         setProgress(pct);
         if (era.chaotic && Math.random() < 0.3) shakeScreen();
       }
@@ -2595,7 +3234,10 @@
         receiptText.textContent = replyBody + ' 本次状态：' + currentMood + '。';
       }
       receiptCode.textContent = code;
-      // 高光展示：弹出居中的「三体回信」卡片（打字机效果）
+
+      // 隐藏广播覆盖层，再展示全屏"坐标已送达"瞬间，最后弹出三体回信
+      hideBroadcastOverlay();
+      await showResultFlash(true);
       showReplyModal(replyBody, replyRole, code, false);
       pushActivity(pick(activities));
       pushHistory(code, currentMood, false, era.era);
@@ -2612,10 +3254,18 @@
 
     // ── Launch failure (三体天气导致的发射失败) ──
     async function failLaunch(era, replyPromise) {
+      const errText = '[ERR!] 信号中断 · ' + era.era + ' 干扰过强，链路已断开';
+      // 写入原 logBox
       const failLine = document.createElement('p');
-      failLine.textContent = '[ERR!] 信号中断 · ' + era.era + ' 干扰过强，链路已断开';
+      failLine.textContent = errText;
       failLine.classList.add('log-glitch');
       logBox.append(failLine);
+      // 写入覆盖层日志，并把进度条和百分比变红
+      appendBroadcastLog(errText, 'log-err');
+      broadcastBar.classList.add('fail');
+      broadcastPct.classList.add('fail');
+      broadcastLabel.textContent = '链路中断';
+
       setProgress(0);
       playFailSound();
       visual.classList.add('launch-failed');
@@ -2636,7 +3286,10 @@
         receiptText.textContent = replyBody;
       }
       receiptCode.textContent = code;
-      // 高光展示：弹出居中的「三体回信」卡片（失败红色主题）
+
+      // 隐藏广播覆盖层，再展示全屏"链路中断"瞬间，最后弹出失败回信
+      hideBroadcastOverlay();
+      await showResultFlash(false);
       showReplyModal(replyBody, replyRole, code, true);
       pushActivity('一次坐标发射被' + era.era + '的干扰吞没，未能送达。');
       pushHistory(code, currentMood, true, era.era);
@@ -2759,6 +3412,148 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
     drawSpace();
+  </script>
+
+  <!-- WebGL 雷达（原生 WebGL，无外部依赖） -->
+  <script>
+  (function() {
+    const VS = `
+      attribute vec2 aPos;
+      void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+    `;
+    const FS = `
+      precision highp float;
+      uniform float uTime;
+      uniform vec2  uResolution;
+      uniform vec2  uMouse;
+
+      #define TAU 6.28318530718
+
+      void main() {
+        vec2 st = gl_FragCoord.xy / uResolution;
+        st = st * 2.0 - 1.0;
+        st.x *= uResolution.x / uResolution.y;
+
+        /* 鼠标轻微视差 */
+        vec2 m = (uMouse * 2.0 - 1.0);
+        m.x *= uResolution.x / uResolution.y;
+        st -= m * 0.07;
+
+        st *= 0.55;
+
+        float dist  = length(st);
+        float theta = atan(st.y, st.x);
+        float t     = uTime * 0.6;
+
+        /* 同心圆 */
+        float rp   = dist * 8.0 - t;
+        float rd   = abs(fract(rp) - 0.5);
+        float ring = 1.0 - smoothstep(0.0, 0.04, rd);
+
+        /* 辐射线 */
+        float sa    = abs(fract(theta * 8.0 / TAU + 0.5) - 0.5) * TAU / 8.0;
+        float spoke = (1.0 - smoothstep(0.0, 0.008, sa * dist)) * smoothstep(0.0, 0.1, dist);
+
+        /* 扫描光束 */
+        float beam = pow(max(0.5 * sin(theta + t) + 0.5, 0.0), 2.5);
+
+        /* 边缘衰减 */
+        float fade = smoothstep(1.05, 0.85, dist) * pow(max(1.0 - dist, 0.0), 1.8);
+
+        float intensity = max((ring + spoke + beam) * fade * 1.1, 0.0);
+
+        /* 绿色主色 #58f2a1 */
+        vec3 col = vec3(0.345, 0.949, 0.631) * intensity;
+
+        float alpha = clamp(length(col), 0.0, 1.0);
+        gl_FragColor = vec4(col, alpha);
+      }
+    `;
+
+    function initRadar() {
+      const container = document.getElementById('radarWebgl');
+      if (!container) return;
+
+      const canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:50%;display:block;';
+      container.appendChild(canvas);
+
+      const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
+      if (!gl) { console.warn('WebGL not supported'); return; }
+
+      /* 编译 shader */
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+          console.error(gl.getShaderInfoLog(s));
+        return s;
+      }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
+
+      /* 全屏三角形 */
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+      const aPos = gl.getAttribLocation(prog, 'aPos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uTime       = gl.getUniformLocation(prog, 'uTime');
+      const uResolution = gl.getUniformLocation(prog, 'uResolution');
+      const uMouse      = gl.getUniformLocation(prog, 'uMouse');
+
+      let mouse = [0.5, 0.5];
+      let targetMouse = [0.5, 0.5];
+
+      canvas.addEventListener('mousemove', e => {
+        const r = canvas.getBoundingClientRect();
+        targetMouse = [(e.clientX - r.left) / r.width, 1 - (e.clientY - r.top) / r.height];
+      });
+      canvas.addEventListener('mouseleave', () => { targetMouse = [0.5, 0.5]; });
+
+      function resize() {
+        const w = container.offsetWidth  || 400;
+        const h = container.offsetHeight || 400;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width  = w * dpr;
+        canvas.height = h * dpr;
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      function loop(ts) {
+        requestAnimationFrame(loop);
+        mouse[0] += 0.05 * (targetMouse[0] - mouse[0]);
+        mouse[1] += 0.05 * (targetMouse[1] - mouse[1]);
+
+        gl.clearColor(0, 0, 0, 0);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        gl.uniform1f(uTime, ts * 0.001);
+        gl.uniform2f(uResolution, canvas.width, canvas.height);
+        gl.uniform2f(uMouse, mouse[0], mouse[1]);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    /* 等 DOM 完全渲染后再初始化，确保尺寸正确 */
+    if (document.readyState === 'complete') {
+      requestAnimationFrame(initRadar);
+    } else {
+      window.addEventListener('load', () => requestAnimationFrame(initRadar));
+    }
+  })();
   </script>
 </body>
 </html>
