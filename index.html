@@ -10,8 +10,8 @@
     :root {
       color-scheme: dark;
       --bg: #070809;
-      --panel: rgba(14, 18, 20, 0.82);
-      --panel-solid: #0d1214;
+      --panel: rgba(14, 18, 20, 0.55);
+      --panel-solid: rgba(13, 18, 20, 0.72);
       --line: rgba(225, 238, 222, 0.14);
       --text: #edf7ec;
       --muted: #8aa09a;
@@ -25,20 +25,18 @@
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     * { box-sizing: border-box; }
+    html {
+      background: #04060a; /* canvas 加载前的 fallback 深色 */
+    }
     html, body {
       min-height: 100%; margin: 0;
-      background:
-        radial-gradient(circle at 16% 14%, rgba(255,77,77,0.15), transparent 22rem),
-        radial-gradient(circle at 84% 28%, rgba(91,215,246,0.10), transparent 24rem),
-        radial-gradient(circle at 50% 80%, rgba(88,242,161,0.06), transparent 18rem),
-        linear-gradient(145deg, #060708 0%, #0e1210 42%, #13100a 100%);
       color: var(--text); overflow-x: hidden;
     }
-    body { min-height: 100vh; }
+    body { min-height: 100vh; background: transparent; }
     button { font: inherit; }
 
     /* Canvas & Noise */
-    #space { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 0.9; }
+    #space { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; opacity: 1; }
     .noise {
       position: fixed; inset: 0; z-index: 1; pointer-events: none;
       background-image:
@@ -490,7 +488,8 @@
     .drawer {
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
       width: min(92vw, 480px);
-      background: linear-gradient(180deg, rgba(12,16,14,0.98) 0%, rgba(8,11,10,0.99) 100%);
+      background: linear-gradient(180deg, rgba(12,16,14,0.82) 0%, rgba(8,11,10,0.85) 100%);
+      backdrop-filter: blur(24px) saturate(1.1);
       border-left: 1px solid rgba(225,238,222,0.12);
       box-shadow: -20px 0 60px rgba(0,0,0,0.5);
       display: flex; flex-direction: column;
@@ -639,7 +638,8 @@
     .confirm-overlay.show { opacity: 1; pointer-events: auto; }
     .confirm-modal {
       width: min(92vw, 500px);
-      background: linear-gradient(160deg, rgba(18,24,26,0.97), rgba(10,14,15,0.99));
+      background: linear-gradient(160deg, rgba(18,24,26,0.82), rgba(10,14,15,0.86));
+      backdrop-filter: blur(28px) saturate(1.1);
       border: 1px solid rgba(91,215,246,0.28);
       border-radius: 16px;
       box-shadow: 0 30px 90px rgba(0,0,0,0.65), 0 0 60px rgba(91,215,246,0.08);
@@ -767,7 +767,8 @@
     /* 成就墙弹窗 */
     .ach-wall-modal {
       width: min(92vw, 520px); max-height: 86vh; overflow-y: auto;
-      background: var(--panel-solid); border: 1px solid var(--line); border-radius: var(--radius);
+      background: rgba(13,18,20,0.82); backdrop-filter: blur(24px) saturate(1.1);
+      border: 1px solid var(--line); border-radius: var(--radius);
       box-shadow: var(--shadow); padding: 16px 18px 20px;
       transform: translateY(12px); transition: transform 200ms ease;
     }
@@ -853,7 +854,8 @@
     .ach-toast {
       position: fixed; right: 20px; bottom: 36px; z-index: 50;
       width: min(calc(100vw - 40px), 340px);
-      background: linear-gradient(135deg, rgba(18,22,16,0.97), rgba(12,16,12,0.99));
+      background: linear-gradient(135deg, rgba(18,22,16,0.80), rgba(12,16,12,0.84));
+      backdrop-filter: blur(24px) saturate(1.1);
       border: 1px solid rgba(246,195,91,0.45);
       border-radius: 14px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(246,195,91,0.12);
@@ -895,7 +897,8 @@
     .ach-detail-overlay.show { opacity: 1; pointer-events: auto; }
     .ach-detail-modal {
       width: min(92vw, 380px);
-      background: linear-gradient(160deg, rgba(20,24,18,0.98), rgba(10,14,10,0.99));
+      background: linear-gradient(160deg, rgba(20,24,18,0.82), rgba(10,14,10,0.86));
+      backdrop-filter: blur(28px) saturate(1.1);
       border: 1px solid rgba(246,195,91,0.35);
       border-radius: 16px;
       box-shadow: 0 30px 80px rgba(0,0,0,0.65), 0 0 50px rgba(246,195,91,0.1);
@@ -957,7 +960,8 @@
     .reply-overlay.show { opacity: 1; pointer-events: auto; }
     .reply-modal {
       width: min(92vw, 540px);
-      background: linear-gradient(160deg, rgba(20,26,28,0.96), rgba(10,14,15,0.98));
+      background: linear-gradient(160deg, rgba(20,26,28,0.80), rgba(10,14,15,0.84));
+      backdrop-filter: blur(28px) saturate(1.1);
       border: 1px solid rgba(88,242,161,0.28);
       border-radius: 16px;
       box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(88,242,161,0.1);
@@ -1074,6 +1078,11 @@
     .reply-modal.role-zhizi { border-color: rgba(91,215,246,0.3); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(91,215,246,0.1); }
     .reply-modal.role-zhizi .reply-role { color: var(--cyan); border-color: rgba(91,215,246,0.35); background: rgba(91,215,246,0.08); }
     .reply-modal.role-zhizi .reply-text.typing::after { color: var(--cyan); }
+    .reply-modal.role-yeweijie { border-color: rgba(180,160,200,0.25); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(180,160,200,0.08); }
+    .reply-modal.role-yeweijie .reply-role { color: #c8b8d8; border-color: rgba(180,160,200,0.3); background: rgba(180,160,200,0.07); }
+    .reply-modal.role-yeweijie .reply-text { color: #e8e0f0; }
+    .reply-modal.role-yeweijie .reply-text.typing::after { color: #c8b8d8; }
+    .reply-modal.role-yeweijie .reply-close-btn { background: linear-gradient(135deg, #9b8aaa, #6e5f80); color: #f0eaf8; box-shadow: 0 8px 24px rgba(150,120,180,0.2); }
     .reply-modal.role-fail { border-color: rgba(255,77,77,0.32); box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(255,77,77,0.1); }
     .reply-modal.role-fail .reply-role { color: var(--red); border-color: rgba(255,77,77,0.35); background: rgba(255,77,77,0.08); }
     .reply-modal.role-fail .reply-text.typing::after { color: var(--red); }
@@ -1083,7 +1092,7 @@
     .broadcast-overlay {
       position: absolute; inset: 0; z-index: 10;
       border-radius: var(--radius);
-      background: rgba(6, 10, 9, 0.93);
+      background: rgba(6, 10, 9, 0.82);
       backdrop-filter: blur(10px);
       display: flex; align-items: center; justify-content: center;
       opacity: 0; pointer-events: none;
@@ -1163,11 +1172,13 @@
 
     /* 成功：深绿底 */
     .result-flash-overlay.success {
-      background: radial-gradient(circle at 50% 46%, rgba(20,50,34,0.97) 0%, rgba(6,12,9,0.99) 100%);
+      background: radial-gradient(circle at 50% 46%, rgba(20,50,34,0.88) 0%, rgba(6,12,9,0.92) 100%);
+      backdrop-filter: blur(16px);
     }
     /* 失败：深红底 */
     .result-flash-overlay.failure {
-      background: radial-gradient(circle at 50% 46%, rgba(50,12,12,0.97) 0%, rgba(8,6,6,0.99) 100%);
+      background: radial-gradient(circle at 50% 46%, rgba(50,12,12,0.88) 0%, rgba(8,6,6,0.92) 100%);
+      backdrop-filter: blur(16px);
     }
 
     .result-flash-icon {
@@ -2323,6 +2334,7 @@
       '三体客服': { icon: '📡', cls: '' },
       '罗辑':     { icon: '🚬', cls: 'role-luoji' },
       '智子':     { icon: '👁', cls: 'role-zhizi' },
+      '叶文洁':   { icon: '📻', cls: 'role-yeweijie' },
     };
     let replyTypeTimer = 0;
     function typewriter(el, text, speed) {
@@ -3328,90 +3340,206 @@
     });
     comfortButton.addEventListener('click', comfort);
 
-    // ── Starfield Canvas ──
-    const canvas = document.querySelector('#space');
-    const ctx2d  = canvas.getContext('2d');
-    const stars  = [];
-    const comets = [];
-    let W = 0, H = 0, PR = 1;
+    // ── Galaxy WebGL Background ──
+    (function initGalaxy() {
+      const canvas = document.querySelector('#space');
 
-    function resizeCanvas() {
-      PR = Math.min(window.devicePixelRatio || 1, 2);
-      W  = window.innerWidth;
-      H  = window.innerHeight;
-      canvas.width  = Math.floor(W * PR);
-      canvas.height = Math.floor(H * PR);
-      canvas.style.width  = W + 'px';
-      canvas.style.height = H + 'px';
-      ctx2d.setTransform(PR, 0, 0, PR, 0, 0);
-      stars.length = 0;
-      const count = Math.min(240, Math.floor((W * H) / 5500));
-      for (let i = 0; i < count; i++) {
-        stars.push({
-          x: Math.random() * W,
-          y: Math.random() * H,
-          r: Math.random() * 1.5 + 0.3,
-          speed: Math.random() * 0.2 + 0.05,
-          hue: Math.random() > 0.72 ? '246,195,91' : Math.random() > 0.5 ? '91,215,246' : '200,240,218',
-          tw: Math.random() * Math.PI * 2,
-          twS: 0.02 + Math.random() * 0.03
-        });
+      const VS = `
+        attribute vec2 position;
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = vec4(position, 0.0, 1.0);
+        }
+      `;
+
+      const FS = `
+        precision highp float;
+
+        uniform float uTime;
+        uniform vec2  uResolution;
+        uniform vec2  uFocal;
+        uniform float uStarSpeed;
+        uniform float uDensity;
+        uniform float uSpeed;
+        uniform float uGlowIntensity;
+        uniform float uTwinkleIntensity;
+        uniform float uRotationSpeed;
+
+        varying vec2 vUv;
+
+        #define NUM_LAYER 4.0
+        #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
+        #define PERIOD 3.0
+
+        float Hash21(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+        }
+
+        float tri(float x) {
+          return abs(fract(x) * 2.0 - 1.0);
+        }
+
+        float tris(float x) {
+          float t = fract(x);
+          return 1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0));
+        }
+
+        float trisn(float x) {
+          float t = fract(x);
+          return 2.0 * (1.0 - smoothstep(0.0, 1.0, abs(2.0 * t - 1.0))) - 1.0;
+        }
+
+        float Star(vec2 uv, float flare) {
+          float d = length(uv);
+          float m = (0.05 * uGlowIntensity) / d;
+          float rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 1000.0));
+          m += rays * flare * uGlowIntensity;
+          uv *= MAT45;
+          rays = smoothstep(0.0, 1.0, 1.0 - abs(uv.x * uv.y * 1000.0));
+          m += rays * 0.3 * flare * uGlowIntensity;
+          m *= smoothstep(1.0, 0.2, d);
+          return m;
+        }
+
+        vec3 StarLayer(vec2 uv) {
+          vec3 col = vec3(0.0);
+          vec2 gv = fract(uv) - 0.5;
+          vec2 id = floor(uv);
+
+          for (int y = -1; y <= 1; y++) {
+            for (int x = -1; x <= 1; x++) {
+              vec2 offset = vec2(float(x), float(y));
+              vec2 si = id + vec2(float(x), float(y));
+              float seed = Hash21(si);
+              float size = fract(seed * 345.32);
+              float glossLocal = tri(uStarSpeed / (PERIOD * seed + 1.0));
+              float flareSize = smoothstep(0.9, 1.0, size) * glossLocal;
+
+              // 纯白色星星，亮度由 size 决定
+              vec3 base = vec3(1.0);
+
+              vec2 pad = vec2(tris(seed * 34.0 + uTime * uSpeed / 10.0), tris(seed * 38.0 + uTime * uSpeed / 30.0)) - 0.5;
+
+              float star = Star(gv - offset - pad, flareSize);
+              float twinkle = trisn(uTime * uSpeed + seed * 6.2831) * 0.5 + 1.0;
+              twinkle = mix(1.0, twinkle, uTwinkleIntensity);
+              star *= twinkle;
+
+              col += star * size * base;
+            }
+          }
+          return col;
+        }
+
+        void main() {
+          vec2 focalPx = uFocal * uResolution;
+          vec2 uv = (vUv * uResolution - focalPx) / uResolution.y;
+
+          float autoRotAngle = uTime * uRotationSpeed;
+          mat2 autoRot = mat2(cos(autoRotAngle), -sin(autoRotAngle), sin(autoRotAngle), cos(autoRotAngle));
+          uv = autoRot * uv;
+
+          vec3 col = vec3(0.0);
+          for (float i = 0.0; i < 1.0; i += 1.0 / NUM_LAYER) {
+            float depth = fract(i + uStarSpeed * uSpeed);
+            float scale = mix(20.0 * uDensity, 0.5 * uDensity, depth);
+            float fade  = depth * smoothstep(1.0, 0.9, depth);
+            col += StarLayer(uv * scale + i * 453.32) * fade;
+          }
+
+          // 直接输出不透明颜色，背景由 clearColor 提供深色
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `;
+
+      const gl = canvas.getContext('webgl', { alpha: false });
+      if (!gl) return; // 降级：不支持 WebGL 则静默跳过
+
+      // 不透明深色背景，让 backdrop-filter 能模糊到星星
+      gl.clearColor(0.016, 0.02, 0.024, 1.0);
+
+      function compileShader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
       }
-    }
+      const prog = gl.createProgram();
+      gl.attachShader(prog, compileShader(gl.VERTEX_SHADER, VS));
+      gl.attachShader(prog, compileShader(gl.FRAGMENT_SHADER, FS));
+      gl.linkProgram(prog);
+      gl.useProgram(prog);
 
-    function spawnComet() {
-      if (comets.length < 2 && Math.random() < 0.003) {
-        comets.push({
-          x: Math.random() * W,
-          y: -10,
-          vx: (Math.random() - 0.4) * 2.5,
-          vy: 2.5 + Math.random() * 2,
-          len: 40 + Math.random() * 60,
-          alpha: 0.7 + Math.random() * 0.3
-        });
+      // 全屏三角形（覆盖整个 NDC 空间）
+      const verts = new Float32Array([
+        -1, -1,  0, 0,
+         3, -1,  2, 0,
+        -1,  3,  0, 2
+      ]);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+
+      const aPos = gl.getAttribLocation(prog, 'position');
+      const aUv  = gl.getAttribLocation(prog, 'uv');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+      gl.enableVertexAttribArray(aUv);
+      gl.vertexAttribPointer(aUv,  2, gl.FLOAT, false, 16, 8);
+
+      // Uniform 位置
+      const uTime             = gl.getUniformLocation(prog, 'uTime');
+      const uResolution       = gl.getUniformLocation(prog, 'uResolution');
+      const uFocal            = gl.getUniformLocation(prog, 'uFocal');
+      const uStarSpeed        = gl.getUniformLocation(prog, 'uStarSpeed');
+      const uDensity          = gl.getUniformLocation(prog, 'uDensity');
+      const uSpeed            = gl.getUniformLocation(prog, 'uSpeed');
+      const uGlowIntensity    = gl.getUniformLocation(prog, 'uGlowIntensity');
+      const uTwinkleIntensity = gl.getUniformLocation(prog, 'uTwinkleIntensity');
+      const uRotationSpeed    = gl.getUniformLocation(prog, 'uRotationSpeed');
+
+      // 静态参数
+      gl.uniform2f(uFocal, 0.5, 0.5);
+      gl.uniform1f(uDensity, 1.2);
+      gl.uniform1f(uSpeed, 0.5);
+      gl.uniform1f(uGlowIntensity, 0.5);
+      gl.uniform1f(uTwinkleIntensity, 0.6);
+      gl.uniform1f(uRotationSpeed, 0.03);
+
+      function resizeGalaxy() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        canvas.width  = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        gl.uniform2f(uResolution, canvas.width, canvas.height);
       }
-    }
+      window.addEventListener('resize', resizeGalaxy);
+      resizeGalaxy();
 
-    function drawSpace() {
-      ctx2d.fillStyle = 'rgba(7,8,9,0.28)';
-      ctx2d.fillRect(0, 0, W, H);
+      let startTime = null;
 
-      // Stars
-      for (const s of stars) {
-        s.y += s.speed;
-        s.tw += s.twS;
-        if (s.y > H + 4) { s.y = -4; s.x = Math.random() * W; }
-        const alpha = 0.3 + (Math.sin(s.tw) + 1) * 0.18;
-        ctx2d.beginPath();
-        ctx2d.fillStyle = 'rgba(' + s.hue + ',' + alpha + ')';
-        ctx2d.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx2d.fill();
+      function renderGalaxy(ts) {
+        if (!startTime) startTime = ts;
+        const t = (ts - startTime) * 0.001;
+        const starSpeedAcc = t * 0.5 * 0.5 / 10.0;
+
+        gl.uniform1f(uTime, t);
+        gl.uniform1f(uStarSpeed, starSpeedAcc);
+
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        requestAnimationFrame(renderGalaxy);
       }
-
-      // Comets
-      spawnComet();
-      for (let i = comets.length - 1; i >= 0; i--) {
-        const c = comets[i];
-        c.x += c.vx; c.y += c.vy;
-        const grad = ctx2d.createLinearGradient(c.x, c.y, c.x - c.vx * c.len / c.vy, c.y - c.len);
-        grad.addColorStop(0, 'rgba(200,240,218,' + c.alpha + ')');
-        grad.addColorStop(1, 'rgba(200,240,218,0)');
-        ctx2d.strokeStyle = grad;
-        ctx2d.lineWidth = 1.2;
-        ctx2d.beginPath();
-        ctx2d.moveTo(c.x, c.y);
-        ctx2d.lineTo(c.x - c.vx * c.len / c.vy, c.y - c.len);
-        ctx2d.stroke();
-        c.alpha -= 0.004;
-        if (c.y > H + 20 || c.alpha <= 0) comets.splice(i, 1);
-      }
-
-      requestAnimationFrame(drawSpace);
-    }
-
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-    drawSpace();
+      requestAnimationFrame(renderGalaxy);
+    })();
   </script>
 
   <!-- WebGL 雷达（原生 WebGL，无外部依赖） -->
