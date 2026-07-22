@@ -10,8 +10,8 @@
     :root {
       color-scheme: dark;
       --bg: #070809;
-      --panel: rgba(14, 18, 20, 0.55);
-      --panel-solid: rgba(13, 18, 20, 0.72);
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-solid: rgba(255, 255, 255, 0.06);
       --line: rgba(225, 238, 222, 0.14);
       --text: #edf7ec;
       --muted: #8aa09a;
@@ -60,13 +60,13 @@
       display: grid; grid-template-rows: auto 1fr auto; gap: 16px;
     }
 
-    /* Glass panels */
+    /* Glass panels — 统一使用与三体天气相同的通透毛玻璃风格 */
     .topbar, .panel, .counter-window, .receipt {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      backdrop-filter: blur(22px) saturate(1.1);
+      backdrop-filter: blur(12px);
     }
 
     /* Topbar */
@@ -308,7 +308,9 @@
     .mini {
       min-height: 78px; padding: 14px;
       border: 1px solid var(--line); border-radius: var(--radius);
-      background: rgba(255,255,255,0.03); transition: border-color 200ms;
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(12px);
+      transition: border-color 200ms;
     }
     .mini:hover { border-color: rgba(88,242,161,0.25); }
     .mini strong { display: block; margin-bottom: 5px; color: #e8f4f0; font-size: 14px; }
@@ -326,7 +328,7 @@
     .tb-weather {
       padding: 14px 16px;
       border: 1px solid var(--line); border-radius: var(--radius);
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.04);
       backdrop-filter: blur(12px);
     }
     .tb-weather-title { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
@@ -488,8 +490,8 @@
     .drawer {
       position: fixed; top: 0; right: 0; bottom: 0; z-index: 41;
       width: min(92vw, 480px);
-      background: linear-gradient(180deg, rgba(12,16,14,0.82) 0%, rgba(8,11,10,0.85) 100%);
-      backdrop-filter: blur(24px) saturate(1.1);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
       border-left: 1px solid rgba(225,238,222,0.12);
       box-shadow: -20px 0 60px rgba(0,0,0,0.5);
       display: flex; flex-direction: column;
@@ -638,8 +640,8 @@
     .confirm-overlay.show { opacity: 1; pointer-events: auto; }
     .confirm-modal {
       width: min(92vw, 500px);
-      background: linear-gradient(160deg, rgba(18,24,26,0.82), rgba(10,14,15,0.86));
-      backdrop-filter: blur(28px) saturate(1.1);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(91,215,246,0.28);
       border-radius: 16px;
       box-shadow: 0 30px 90px rgba(0,0,0,0.65), 0 0 60px rgba(91,215,246,0.08);
@@ -767,7 +769,7 @@
     /* 成就墙弹窗 */
     .ach-wall-modal {
       width: min(92vw, 520px); max-height: 86vh; overflow-y: auto;
-      background: rgba(13,18,20,0.82); backdrop-filter: blur(24px) saturate(1.1);
+      background: rgba(255,255,255,0.05); backdrop-filter: blur(16px);
       border: 1px solid var(--line); border-radius: var(--radius);
       box-shadow: var(--shadow); padding: 16px 18px 20px;
       transform: translateY(12px); transition: transform 200ms ease;
@@ -854,8 +856,8 @@
     .ach-toast {
       position: fixed; right: 20px; bottom: 36px; z-index: 50;
       width: min(calc(100vw - 40px), 340px);
-      background: linear-gradient(135deg, rgba(18,22,16,0.80), rgba(12,16,12,0.84));
-      backdrop-filter: blur(24px) saturate(1.1);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(246,195,91,0.45);
       border-radius: 14px;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(246,195,91,0.12);
@@ -897,7 +899,7 @@
     .ach-detail-overlay.show { opacity: 1; pointer-events: auto; }
     .ach-detail-modal {
       width: min(92vw, 380px);
-      background: linear-gradient(160deg, rgba(20,24,18,0.82), rgba(10,14,10,0.86));
+      background: rgba(255,255,255,0.05);
       backdrop-filter: blur(28px) saturate(1.1);
       border: 1px solid rgba(246,195,91,0.35);
       border-radius: 16px;
@@ -960,8 +962,8 @@
     .reply-overlay.show { opacity: 1; pointer-events: auto; }
     .reply-modal {
       width: min(92vw, 540px);
-      background: linear-gradient(160deg, rgba(20,26,28,0.80), rgba(10,14,15,0.84));
-      backdrop-filter: blur(28px) saturate(1.1);
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(16px);
       border: 1px solid rgba(88,242,161,0.28);
       border-radius: 16px;
       box-shadow: 0 30px 90px rgba(0,0,0,0.6), 0 0 60px rgba(88,242,161,0.1);
@@ -3369,7 +3371,7 @@
 
         varying vec2 vUv;
 
-        #define NUM_LAYER 4.0
+        #define NUM_LAYER 2.0
         #define MAT45 mat2(0.7071, -0.7071, 0.7071, 0.7071)
         #define PERIOD 3.0
 
@@ -3504,18 +3506,18 @@
 
       // 静态参数
       gl.uniform2f(uFocal, 0.5, 0.5);
-      gl.uniform1f(uDensity, 1.2);
-      gl.uniform1f(uSpeed, 0.5);
-      gl.uniform1f(uGlowIntensity, 0.5);
-      gl.uniform1f(uTwinkleIntensity, 0.6);
-      gl.uniform1f(uRotationSpeed, 0.03);
+      gl.uniform1f(uDensity, 0.9);       // 层数减少，密度补回一点
+      gl.uniform1f(uSpeed, 0.2);         // 速度降低（原 0.5）
+      gl.uniform1f(uGlowIntensity, 0.4);
+      gl.uniform1f(uTwinkleIntensity, 0.4);
+      gl.uniform1f(uRotationSpeed, 0.01); // 旋转也放慢（原 0.03）
 
       function resizeGalaxy() {
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        // DPR 固定为 1，避免 Retina 屏下 4x 像素计算量
         const w = window.innerWidth;
         const h = window.innerHeight;
-        canvas.width  = Math.floor(w * dpr);
-        canvas.height = Math.floor(h * dpr);
+        canvas.width  = Math.floor(w);
+        canvas.height = Math.floor(h);
         canvas.style.width  = w + 'px';
         canvas.style.height = h + 'px';
         gl.viewport(0, 0, canvas.width, canvas.height);
@@ -3525,11 +3527,20 @@
       resizeGalaxy();
 
       let startTime = null;
+      let lastFrame = 0;
+      const FRAME_INTERVAL = 1000 / 30; // 限制 30fps，减少 GPU 压力
 
       function renderGalaxy(ts) {
         if (!startTime) startTime = ts;
+        // 跳帧：距上次渲染不足间隔则跳过
+        if (ts - lastFrame < FRAME_INTERVAL) {
+          requestAnimationFrame(renderGalaxy);
+          return;
+        }
+        lastFrame = ts;
+
         const t = (ts - startTime) * 0.001;
-        const starSpeedAcc = t * 0.5 * 0.5 / 10.0;
+        const starSpeedAcc = t * 0.5 * 0.2 / 10.0;
 
         gl.uniform1f(uTime, t);
         gl.uniform1f(uStarSpeed, starSpeedAcc);
